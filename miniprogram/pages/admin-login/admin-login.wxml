@@ -1,0 +1,73 @@
+<!-- 管理员登录页 -->
+<view class="page-container">
+  <!-- 返回按钮 -->
+  <view class="back-btn" bindtap="goBack">
+    <view class="back-icon"></view>
+  </view>
+
+  <!-- 装饰印章 -->
+  <view class="deco-seal">信</view>
+
+  <!-- 主要内容 -->
+  <view class="login-content">
+    <!-- Logo区域 -->
+    <view class="logo-area">
+      <view class="logo-circle">
+        <text class="logo-char">管</text>
+      </view>
+      <view class="logo-line logo-line-left"></view>
+      <view class="logo-line logo-line-right"></view>
+    </view>
+
+    <!-- 标题区域 -->
+    <view class="title-area">
+      <text class="login-title">管理员登录</text>
+      <text class="login-desc">请输入管理密码以继续</text>
+    </view>
+
+    <!-- 输入区域 -->
+    <view class="form-area">
+      <view class="input-wrap {{focused ? 'focused' : ''}}">
+        <view class="input-icon">
+          <view class="lock-body"></view>
+          <view class="lock-shackle"></view>
+        </view>
+        <input
+          class="password-input"
+          type="text"
+          password="{{!showPassword}}"
+          placeholder="请输入密码"
+          placeholder-class="input-placeholder"
+          value="{{password}}"
+          bindinput="onPasswordInput"
+          bindfocus="onInputFocus"
+          bindblur="onInputBlur"
+          bindconfirm="login"
+          confirm-type="done"
+        />
+        <view class="toggle-pwd" bindtap="togglePassword">
+          <view class="eye-icon {{showPassword ? 'eye-open' : 'eye-closed'}}">
+            <view class="eye-outer"></view>
+            <view class="eye-pupil"></view>
+            <view class="eye-line" wx:if="{{!showPassword}}"></view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 登录按钮 -->
+      <view class="login-btn {{password ? '' : 'btn-disabled'}} {{logging ? 'btn-loading' : ''}}" bindtap="login">
+        <text class="btn-text">{{logging ? '验证中...' : '登 录'}}</text>
+        <view class="btn-shine" wx:if="{{password && !logging}}"></view>
+      </view>
+    </view>
+
+    <!-- 底部提示 -->
+    <view class="footer-tip">
+      <text class="tip-text">仅管理员可访问 · 请妥善保管密码</text>
+    </view>
+  </view>
+
+  <!-- 装饰元素 -->
+  <view class="deco-circle deco-circle-1"></view>
+  <view class="deco-circle deco-circle-2"></view>
+</view>

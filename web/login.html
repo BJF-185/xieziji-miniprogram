@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理员登录 - 写字预约管理后台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="login-body">
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="logo">
+          <svg width="64" height="64" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24 6v36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M14 18c4-4 8-6 14-6s10 2 14 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M14 28c4-4 8-6 14-6s10 2 14 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M14 38c4-4 8-6 14-6s10 2 14 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h1>写字预约</h1>
+        <p class="subtitle">管理后台</p>
+      </div>
+      
+      <div class="form-group">
+        <label for="password">管理员密码</label>
+        <input type="password" id="password" placeholder="请输入密码" class="form-input">
+      </div>
+      
+      <button id="loginBtn" class="login-btn">登 录</button>
+      
+      <p id="errorMsg" class="error-msg"></p>
+    </div>
+    
+    <p class="footer-text">© 2026 写字预约系统</p>
+  </div>
+  
+  <script src="app.js"></script>
+</body>
+</html>

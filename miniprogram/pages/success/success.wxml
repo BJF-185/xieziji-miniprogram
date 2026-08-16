@@ -1,0 +1,72 @@
+<view class="page-container">
+  <view class="custom-navbar">
+    <view class="nav-placeholder" style="height: {{statusBarHeight}}px;"></view>
+    <view class="navbar-content">
+      <view class="navbar-left" bindtap="goBack">
+        <view class="back-icon"></view>
+      </view>
+      <view class="navbar-center">
+        <text class="navbar-title">支付成功</text>
+      </view>
+      <view class="navbar-right"></view>
+    </view>
+  </view>
+
+  <view class="content-area" style="padding-top: {{navTotalHeight}}px;">
+    <view class="success-card">
+      <view class="success-icon-wrap">
+        <view class="success-circle">
+          <view class="success-check"></view>
+        </view>
+      </view>
+      <text class="success-title">支付已提交</text>
+      <text class="success-desc">等待管理员确认收款后开始处理</text>
+
+      <view class="info-section">
+        <view class="info-row">
+          <text class="info-label">文件字数</text>
+          <text class="info-value">{{wordCount}} 字</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">支付状态</text>
+          <text class="info-value status-paid">已提交转账</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="guide-card">
+      <view class="guide-title">后续流程</view>
+
+      <view class="step-item">
+        <view class="step-circle">1</view>
+        <view class="step-body">
+          <text class="step-text">等待管理员确认收款</text>
+          <text class="step-subtext">确认后订单将自动进入处理队列</text>
+        </view>
+      </view>
+
+      <view class="step-item">
+        <view class="step-circle">2</view>
+        <view class="step-body">
+          <text class="step-text">开始手写书写</text>
+          <text class="step-subtext">完成后会在订单中更新状态</text>
+        </view>
+      </view>
+
+      <view class="step-item">
+        <view class="step-circle">3</view>
+        <view class="step-body">
+          <text class="step-text">完成后通知取件</text>
+          <text class="step-subtext">可在"我的订单"中随时查看进度</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="bottom-spacing"></view>
+  </view>
+
+  <view class="bottom-bar">
+    <view class="confirm-btn" bindtap="goMyOrders">查看我的订单</view>
+    <view class="home-link" bindtap="goBack">返回首页</view>
+  </view>
+</view>

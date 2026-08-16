@@ -1,0 +1,33 @@
+<view class="page-container page-fullscreen" style="height: {{windowHeight}}px;">
+  <!-- 全屏背景图：aspectFill等比铺满不变形，左右居中裁剪，竖向底部对齐顶部裁剪 -->
+  <image class="bg-image" src="/images/home-bg.png" mode="aspectFill" style="position: absolute; left: 0rpx; top: 0rpx"></image>
+  
+  <!-- 顶部暗角遮罩 -->
+  <view class="bg-vignette-top"></view>
+
+  <!-- 立即预约按钮 -->
+  <view class="bottom-bar">
+    <view class="btn-primary" bindtap="goOrder">立即预约</view>
+  </view>
+
+  <!-- 底部导航区域 -->
+  <view class="tab-bar-container">
+    <!-- 模糊层：向上延伸+mask渐隐，实现自然过渡 -->
+    <view class="tab-bar-blur"></view>
+    <!-- 图标文字层 -->
+    <view class="tab-bar-icons">
+      <view class="tab-item {{currentTab === 'home' ? 'active' : ''}}" bindtap="onTabHome">
+        <image class="tab-icon" src="{{currentTab === 'home' ? '/images/tabbar/home-active.png' : '/images/tabbar/home.png'}}"/>
+        <text class="tab-label">首页</text>
+      </view>
+      <button class="tab-item tab-contact" open-type="contact">
+        <image class="tab-icon" src="{{currentTab === 'chat' ? '/images/tabbar/chat-active.png' : '/images/tabbar/chat.png'}}"/>
+        <text class="tab-label">咨询</text>
+      </button>
+      <view class="tab-item {{currentTab === 'my' ? 'active' : ''}}" bindtap="onTabMy">
+        <image class="tab-icon" src="{{currentTab === 'my' ? '/images/tabbar/user-active.png' : '/images/tabbar/user.png'}}"/>
+        <text class="tab-label">我的</text>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,23 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/order/order",
+    "pages/payment/payment",
+    "pages/success/success",
+    "pages/my/my",
+    "pages/my-detail/my-detail",
+    "pages/admin-login/admin-login",
+    "pages/admin/admin",
+    "pages/detail/detail"
+  ],
+  "window": {
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTitleText": "写字预约",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#ffffff",
+    "navigationStyle": "custom"
+  },
+  "sitemapLocation": "sitemap.json",
+  "cloud": true
+}

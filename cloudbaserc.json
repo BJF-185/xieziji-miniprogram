@@ -1,0 +1,25 @@
+{
+  "envId": "cloud1-d3gd4qlyef136776e",
+  "functionRoot": "cloudfunctions/",
+  "functions": [
+    {
+      "name": "createOrder",
+      "timeout": 15,
+      "runtime": "Nodejs18.15"
+    },
+    {
+      "name": "getOrders",
+      "timeout": 15,
+      "runtime": "Nodejs18.15"
+    },
+    {
+      "name": "updateOrderStatus",
+      "timeout": 15,
+      "runtime": "Nodejs18.15"
+    }
+  ],
+  "hosting": {
+    "src": "web",
+    "ignore": []
+  }
+}

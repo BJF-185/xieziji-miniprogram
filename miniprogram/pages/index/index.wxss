@@ -1,0 +1,198 @@
+/* === 全屏容器 === */
+.page-container {
+  position: relative;
+  background-color: #000000;
+}
+
+.page-fullscreen {
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* === 全屏背景图：aspectFill等比铺满，object-position控制裁剪对齐点 === */
+.bg-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-position: center bottom;
+  -webkit-object-position: center bottom;
+  z-index: 0;
+}
+
+/* === 顶部暗角遮罩 === */
+.bg-vignette-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 400rpx;
+  background: radial-gradient(ellipse at top, rgba(0,0,0,0.4) 0%, transparent 70%);
+  z-index: 1;
+}
+
+/* === 立即预约按钮 === */
+.bottom-bar {
+  position: fixed;
+  bottom: calc(170rpx + env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  padding: 0 48rpx;
+  z-index: 10;
+}
+
+.btn-primary {
+  width: 100%;
+  height: 104rpx;
+  line-height: 104rpx;
+  background: #000000;
+  color: #ffffff;
+  font-size: 36rpx;
+  font-weight: 600;
+  border-radius: 52rpx;
+  text-align: center;
+  letter-spacing: 6rpx;
+}
+
+.btn-primary:active {
+  background: #222222;
+  transform: scale(0.98);
+  transition: all 0.15s;
+}
+
+/* === TabBar容器 === */
+.tab-bar-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+}
+
+/* === 模糊层：图标上方预留实心空间，顶部边缘多段平滑模糊渐隐 === */
+.tab-bar-blur {
+  position: absolute;
+  top: -140rpx;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0)      0%,
+    rgba(255,255,255,0)     10%,
+    rgba(255,255,255,0.08)  20%,
+    rgba(255,255,255,0.22)  30%,
+    rgba(255,255,255,0.42)  40%,
+    rgba(255,255,255,0.65)  50%,
+    rgba(255,255,255,0.85)  58%,
+    rgba(255,255,255,0.96)  65%,
+    rgba(255,255,255,1)     72%,
+    rgba(255,255,255,1)    100%
+  );
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent             0%,
+    transparent            10%,
+    rgba(0,0,0,0.08)       20%,
+    rgba(0,0,0,0.22)       30%,
+    rgba(0,0,0,0.42)       40%,
+    rgba(0,0,0,0.65)       50%,
+    rgba(0,0,0,0.85)       58%,
+    rgba(0,0,0,0.96)       65%,
+    black                  72%,
+    black                 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent             0%,
+    transparent            10%,
+    rgba(0,0,0,0.08)       20%,
+    rgba(0,0,0,0.22)       30%,
+    rgba(0,0,0,0.42)       40%,
+    rgba(0,0,0,0.65)       50%,
+    rgba(0,0,0,0.85)       58%,
+    rgba(0,0,0,0.96)       65%,
+    black                  72%,
+    black                 100%
+  );
+  pointer-events: none;
+}
+
+/* === 图标文字层：完全透明，纯内容，靠下方blur层提供毛玻璃效果 === */
+.tab-bar-icons {
+  position: relative;
+  display: flex;
+  padding: 12rpx 32rpx;
+  padding-bottom: calc(12rpx + env(safe-area-inset-bottom));
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12rpx 0;
+  transition: all 0.2s;
+  background: transparent;
+  border: none;
+  margin: 0;
+  width: auto;
+  height: auto;
+  line-height: normal;
+  font-size: inherit;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.tab-item::after {
+  border: none;
+}
+
+button.tab-item {
+  padding: 12rpx 0;
+  background: transparent;
+  border: none;
+  margin: 0;
+  width: auto;
+  height: auto;
+  line-height: normal;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+button.tab-item::after {
+  display: none;
+}
+
+.tab-icon {
+  width: 52rpx;
+  height: 52rpx;
+  margin-bottom: 6rpx;
+  transition: opacity 0.2s;
+}
+
+.tab-label {
+  font-size: 24rpx;
+  color: #999999;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.tab-contact {
+  flex: 1;
+}
+
+/* === 激活态 === */
+.tab-item.active .tab-label {
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.tab-item.active .tab-icon {
+  opacity: 1;
+}

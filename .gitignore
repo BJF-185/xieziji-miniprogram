@@ -1,0 +1,8 @@
+# 依赖
+node_modules/
+
+# 云开发本地调试配置
+.cloudbase/
+
+# Trae IDE 工作目录
+.trae/

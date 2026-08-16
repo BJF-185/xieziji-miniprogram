@@ -1,0 +1,104 @@
+<view class="page-container">
+  <view class="custom-navbar">
+    <view class="nav-placeholder" style="height: {{statusBarHeight}}px;"></view>
+    <view class="navbar-content">
+      <view class="navbar-back" bindtap="goBack">
+        <view class="back-arrow"></view>
+      </view>
+      <view class="navbar-center">
+        <text class="navbar-title">预约写字</text>
+      </view>
+      <view class="navbar-right"></view>
+    </view>
+  </view>
+
+  <view class="content-area" style="padding-top: {{navTotalHeight}}px;">
+    <!-- 联系信息卡片 -->
+    <view class="card">
+      <view class="card-title">联系信息</view>
+
+      <view class="info-row">
+        <text class="row-label">姓名<text class="required-mark">*</text></text>
+        <input class="row-input" placeholder="请输入您的姓名" placeholder-class="input-placeholder" value="{{name}}" bindinput="onNameInput" />
+      </view>
+
+      <view class="info-divider"></view>
+
+      <view class="info-row">
+        <text class="row-label">手机号<text class="required-mark">*</text></text>
+        <input class="row-input" type="number" maxlength="11" placeholder="请输入11位手机号" placeholder-class="input-placeholder" value="{{phone}}" bindinput="onPhoneInput" />
+      </view>
+
+      <view class="info-divider"></view>
+
+      <view class="info-row">
+        <text class="row-label">书写纸张</text>
+        <picker mode="selector" range="{{notebookList}}" bindchange="onNotebookChange">
+          <view class="row-picker {{notebookSize ? '' : 'picker-placeholder'}}">
+            <text>{{notebookSize || '请选择纸张类型'}}</text>
+            <view class="picker-arrow"></view>
+          </view>
+        </picker>
+      </view>
+
+      <view wx:if="{{notebookIndex === 1}}" class="form-tip">需要联系我并拿到陕西楼413</view>
+    </view>
+
+    <!-- 上传文件卡片 -->
+    <view class="card">
+      <view class="card-title">上传文件</view>
+
+      <view wx:if="{{!fileInfo.name}}" class="upload-area" bindtap="chooseFile">
+        <view class="word-icon">
+          <text class="word-letter">W</text>
+        </view>
+        <text class="upload-main">点击上传 Word 文档</text>
+        <text class="upload-sub">支持 .doc / .docx 格式，最大10MB</text>
+        <text class="upload-sub">手机端请先将文件发送至微信聊天中再选择</text>
+      </view>
+
+      <view wx:else class="file-section">
+        <view class="file-card">
+          <view class="word-icon">
+            <text class="word-letter">W</text>
+          </view>
+          <view class="file-info-block">
+            <text class="file-name-text">{{fileInfo.name}}</text>
+            <text class="file-size-text">{{fileInfo.sizeStr}}</text>
+          </view>
+          <view class="file-delete" bindtap="removeFile">
+            <view class="delete-x"></view>
+          </view>
+        </view>
+
+        <view wx:if="{{wordCount > 0}}" class="word-result">
+          <view class="word-row">
+            <text class="word-label">总字数</text>
+            <text class="word-value">{{wordCount}} 字</text>
+          </view>
+          <view class="word-row">
+            <text class="word-label">预计费用</text>
+            <text class="word-price"><text class="price-symbol">¥</text>{{totalPrice}}</text>
+          </view>
+        </view>
+
+        <view wx:if="{{counting}}" class="counting-text">正在统计字数...</view>
+      </view>
+    </view>
+
+    <!-- 备注卡片 -->
+    <view class="card">
+      <view class="card-title">备注 / 特殊要求</view>
+      <textarea class="remark-input" placeholder="如：字体要求、纸张要求、完成时间等" placeholder-class="input-placeholder" value="{{remark}}" bindinput="onRemarkInput" maxlength="200"></textarea>
+    </view>
+
+    <view class="bottom-spacing"></view>
+  </view>
+
+  <view class="bottom-bar">
+    <button class="submit-btn {{canSubmit ? '' : 'btn-disabled'}}" bindtap="submitOrder" disabled="{{!canSubmit || submitting}}">
+      {{submitting ? '提交中...' : (canSubmit ? '提交预约' : '请完善信息')}}
+    </button>
+    <text wx:if="{{canSubmit}}" class="submit-tip">提交后请完成支付，我们会尽快为您处理</text>
+  </view>
+</view>

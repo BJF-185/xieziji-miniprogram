@@ -1,0 +1,109 @@
+<!-- 订单详情页 -->
+<view class="container" wx:if="{{order}}">
+  <!-- 自定义导航栏 -->
+  <view class="custom-nav">
+    <view class="nav-placeholder" style="height: {{statusBarHeight}}px;"></view>
+    <view class="nav-back" bindtap="goBack">
+      <view class="back-icon"></view>
+      <text class="nav-title">订单详情</text>
+    </view>
+  </view>
+  <!-- 订单状态 -->
+  <view class="status-banner status-{{order.status}}">
+    <text class="status-text">{{order.statusText}}</text>
+    <text class="status-time">{{order.createTimeStr}}</text>
+  </view>
+
+  <!-- 客户信息 -->
+  <view class="card">
+    <view class="card-title">客户信息</view>
+    <view class="info-row">
+      <text class="info-label">姓名</text>
+      <text class="info-value">{{order.name}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">电话</text>
+      <view class="phone-row">
+        <text class="info-value">{{order.phone}}</text>
+        <view class="call-btn" bindtap="callPhone">拨打</view>
+      </view>
+    </view>
+    <view class="info-row" wx:if="{{order.notebookSize}}">
+      <text class="info-label">本子大小</text>
+      <text class="info-value">{{order.notebookSize}}</text>
+    </view>
+    <view class="info-row" wx:if="{{order.pageCount}}">
+      <text class="info-label">写几页</text>
+      <text class="info-value">{{order.pageCount}} 页</text>
+    </view>
+    <view class="info-row" wx:if="{{order.remark}}">
+      <text class="info-label">备注</text>
+      <text class="info-value remark-text">{{order.remark}}</text>
+    </view>
+  </view>
+
+  <!-- 文件信息 -->
+  <view class="card">
+    <view class="card-title">文件信息</view>
+    <view class="file-box" bindtap="downloadFile">
+      <view class="file-icon">W</view>
+      <view class="file-info">
+        <text class="file-name">{{order.fileName}}</text>
+        <text class="file-tip">{{order.wordCount}} 字 · 点击下载</text>
+      </view>
+      <view class="download-icon-wrap">
+        <view class="download-icon {{downloading ? 'downloading' : ''}}"></view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 订单金额 -->
+  <view class="card">
+    <view class="card-title">订单金额</view>
+    <view class="info-row">
+      <text class="info-label">字数</text>
+      <text class="info-value">{{order.wordCount}} 字</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">单价</text>
+      <text class="info-value">¥0.05/字</text>
+    </view>
+    <view class="info-row total-row">
+      <text class="info-label">总价</text>
+      <text class="total-price">¥{{order.priceStr}}</text>
+    </view>
+    <view class="pay-tip">线下交付时收款</view>
+  </view>
+
+  <!-- 订单号 -->
+  <view class="card">
+    <view class="info-row">
+      <text class="info-label">订单号</text>
+      <text class="info-value order-no">{{order.orderNo}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">下单时间</text>
+      <text class="info-value">{{order.createTimeFull}}</text>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="action-area">
+    <block wx:if="{{order.status === 'pending'}}">
+      <button class="btn-primary" bindtap="changeStatus" data-status="doing">开始处理</button>
+      <button class="btn-outline cancel-btn" bindtap="changeStatus" data-status="cancelled">取消订单</button>
+    </block>
+    <block wx:if="{{order.status === 'doing'}}">
+      <button class="btn-primary" bindtap="changeStatus" data-status="done">标记完成</button>
+      <button class="btn-outline cancel-btn" bindtap="changeStatus" data-status="cancelled">取消订单</button>
+    </block>
+    <block wx:if="{{order.status === 'done' || order.status === 'cancelled'}}">
+      <button class="btn-outline" bindtap="changeStatus" data-status="pending">重新打开</button>
+    </block>
+  </view>
+</view>
+
+<!-- 加载中 -->
+<view class="loading" wx:if="{{!order && loading}}">
+  <text>加载中...</text>
+</view>

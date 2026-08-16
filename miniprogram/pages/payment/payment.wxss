@@ -1,0 +1,286 @@
+.page-container {
+  min-height: 100vh;
+  background-color: #f8f7f4;
+  position: relative;
+}
+
+.custom-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background-color: #f8f7f4;
+}
+
+.nav-placeholder {
+  width: 100%;
+}
+
+.navbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 88rpx;
+  padding: 0 24rpx;
+  position: relative;
+}
+
+.navbar-left, .navbar-right {
+  width: 80rpx;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.navbar-left {
+  padding-left: 8rpx;
+}
+
+.back-icon {
+  width: 22rpx;
+  height: 22rpx;
+  border-left: 4rpx solid #1a1a1a;
+  border-bottom: 4rpx solid #1a1a1a;
+  transform: rotate(45deg);
+}
+
+.navbar-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.navbar-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.3;
+}
+
+.navbar-subtitle {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 2rpx;
+}
+
+.content-area {
+  padding: 24rpx 32rpx;
+  padding-bottom: 200rpx;
+}
+
+.guide-card {
+  background-color: #ffffff;
+  border-radius: 24rpx;
+  padding: 40rpx 36rpx;
+  box-shadow: 0 2rpx 16rpx rgba(0, 0, 0, 0.04);
+}
+
+.guide-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 36rpx;
+}
+
+.step-item {
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+}
+
+.step-circle {
+  width: 52rpx;
+  height: 52rpx;
+  line-height: 52rpx;
+  text-align: center;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+  background-color: #f5f5f5;
+  border-radius: 50%;
+  flex-shrink: 0;
+  z-index: 2;
+  position: relative;
+}
+
+.step-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 25rpx;
+  top: 52rpx;
+  width: 2rpx;
+  height: calc(100% + 28rpx - 52rpx);
+  border-left: 2rpx dashed #e0e0e0;
+  z-index: 1;
+}
+
+.step-body {
+  flex: 1;
+  margin-left: 24rpx;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding-bottom: 28rpx;
+}
+
+.step-item:last-child .step-body {
+  padding-bottom: 0;
+}
+
+.step-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.step-text {
+  font-size: 30rpx;
+  color: #1a1a1a;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.step-subtext {
+  font-size: 24rpx;
+  color: #b0b0b0;
+  margin-top: 8rpx;
+  display: block;
+  line-height: 1.4;
+}
+
+.step-right {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  flex-shrink: 0;
+}
+
+.step-amount {
+  display: flex;
+  align-items: baseline;
+  flex-shrink: 0;
+}
+
+.amount-symbol {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-right: 2rpx;
+}
+
+.amount-num {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 56rpx;
+  padding: 0 32rpx;
+  background-color: #1a1a1a;
+  border-radius: 28rpx;
+  transition: all 0.2s;
+}
+
+.copy-btn.copied {
+  background-color: #34c759;
+}
+
+.copy-btn text {
+  font-size: 24rpx;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.copy-btn:active {
+  transform: scale(0.95);
+  opacity: 0.8;
+}
+
+.qr-wrapper {
+  margin: 20rpx auto 0;
+  width: 440rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+  border-radius: 24rpx;
+  padding: 28rpx;
+  box-shadow: 0 2rpx 16rpx rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
+}
+
+.qr-image {
+  width: 380rpx;
+  height: 380rpx;
+  display: block;
+}
+
+.step-divider {
+  display: none;
+}
+
+.bottom-spacing {
+  height: 40rpx;
+}
+
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20rpx 32rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  background-color: #f8f7f4;
+}
+
+.confirm-btn {
+  width: 100%;
+  height: 96rpx;
+  line-height: 96rpx;
+  background: #1a1a1a !important;
+  color: #ffffff !important;
+  font-size: 34rpx;
+  font-weight: 600;
+  border-radius: 48rpx;
+  border: none !important;
+  padding: 0;
+  margin: 0;
+  text-align: center;
+  letter-spacing: 4rpx;
+}
+
+.confirm-btn::after {
+  border: none !important;
+}
+
+.confirm-btn:active {
+  background: #333333 !important;
+  opacity: 0.9;
+  transform: scale(0.98);
+}
+
+.confirm-btn.submitted {
+  background: #34c759 !important;
+  color: #ffffff !important;
+}
+
+.confirm-btn.submitted:active {
+  background: #2db84d !important;
+  transform: none;
+  opacity: 1;
+}
+
+.qr-wrapper:active {
+  opacity: 0.8;
+  transform: scale(0.98);
+}

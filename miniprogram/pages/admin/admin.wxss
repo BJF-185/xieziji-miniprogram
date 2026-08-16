@@ -1,0 +1,494 @@
+/* 管理后台 - 新中式极简风格 */
+.page-container {
+  min-height: 100vh;
+  background-color: #f8f7f4;
+}
+
+/* === 自定义导航栏 === */
+.custom-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background-color: #f8f7f4;
+}
+
+.nav-placeholder {
+  width: 100%;
+}
+
+.navbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 88rpx;
+  padding: 0 24rpx;
+  position: relative;
+}
+
+.navbar-left,
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.navbar-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.navbar-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.3;
+}
+
+.nav-btn {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.nav-btn:active {
+  transform: scale(0.92);
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* 铃铛图标 */
+.bell-icon {
+  position: relative;
+  width: 36rpx;
+  height: 36rpx;
+}
+
+.bell-body {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24rpx;
+  height: 24rpx;
+  border: 3rpx solid #c9a227;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: transparent;
+}
+
+.bell-top {
+  position: absolute;
+  top: 2rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8rpx;
+  height: 8rpx;
+  background: #c9a227;
+  border-radius: 50%;
+}
+
+.bell-dot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 12rpx;
+  height: 12rpx;
+  background: #c41e3a;
+  border-radius: 50%;
+  border: 2rpx solid #f8f7f4;
+}
+
+/* 返回箭头图标 */
+.back-arrow {
+  width: 22rpx;
+  height: 22rpx;
+  border-left: 3rpx solid #1a1a1a;
+  border-bottom: 3rpx solid #1a1a1a;
+  transform: rotate(45deg);
+  margin-left: 4rpx;
+}
+
+/* === 内容区域 === */
+.content-area {
+  padding: 24rpx 32rpx;
+  padding-bottom: 40rpx;
+}
+
+/* === 统计Banner === */
+.stats-banner {
+  position: relative;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2520 100%);
+  border-radius: 32rpx;
+  padding: 40rpx 36rpx;
+  margin-bottom: 28rpx;
+  overflow: hidden;
+  box-shadow: 0 8rpx 32rpx rgba(26, 26, 26, 0.15);
+}
+
+.banner-decoration {
+  position: absolute;
+  width: 80rpx;
+  height: 80rpx;
+  border: 2rpx solid rgba(201, 162, 39, 0.2);
+  border-radius: 50%;
+}
+
+.banner-deco-tl {
+  top: -20rpx;
+  left: -20rpx;
+}
+
+.banner-deco-br {
+  bottom: -30rpx;
+  right: -30rpx;
+  width: 120rpx;
+  height: 120rpx;
+}
+
+.stats-main {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  margin-bottom: 36rpx;
+}
+
+.stats-total-num {
+  font-size: 72rpx;
+  font-weight: 700;
+  color: #c9a227;
+  letter-spacing: -2rpx;
+  line-height: 1;
+}
+
+.stats-total-label {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+}
+
+.stats-grid {
+  display: flex;
+  gap: 8rpx;
+}
+
+.stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16rpx 8rpx;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16rpx;
+}
+
+.stat-num {
+  font-size: 36rpx;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 6rpx;
+}
+
+.stat-orange { color: #F59E0B; }
+.stat-blue { color: #3B82F6; }
+.stat-purple { color: #8B5CF6; }
+.stat-gold { color: #c9a227; }
+.stat-green { color: #22C55E; }
+
+/* === 筛选栏 === */
+.filter-scroll {
+  white-space: nowrap;
+  margin-bottom: 24rpx;
+}
+
+.filter-bar {
+  display: inline-flex;
+  gap: 16rpx;
+  padding: 4rpx;
+}
+
+.filter-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16rpx 32rpx;
+  border-radius: 28rpx;
+  font-size: 26rpx;
+  color: #999999;
+  background: #ffffff;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
+}
+
+.filter-tab:active {
+  transform: scale(0.95);
+}
+
+.filter-tab.active {
+  background: #1a1a1a;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 4rpx 16rpx rgba(26, 26, 26, 0.2);
+}
+
+/* === 订单列表 === */
+.order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.order-card {
+  background: #ffffff;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
+  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.order-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 24rpx;
+  border-bottom: 1rpx solid #f5f5f0;
+}
+
+.order-id-wrap {
+  display: flex;
+  align-items: baseline;
+}
+
+.order-id-prefix {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #c9a227;
+  margin-right: 2rpx;
+}
+
+.order-id {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.status-tag {
+  font-size: 22rpx;
+  font-weight: 600;
+  padding: 8rpx 20rpx;
+  border-radius: 20rpx;
+}
+
+.status-tag text {
+  font-size: 22rpx;
+}
+
+.status-pending { background: rgba(245, 158, 11, 0.08); color: #F59E0B; }
+.status-doing { background: rgba(139, 92, 246, 0.08); color: #8B5CF6; }
+.status-done { background: rgba(34, 197, 94, 0.08); color: #22C55E; }
+.status-cancelled { background: rgba(153, 153, 153, 0.08); color: #999999; }
+.status-unpaid { background: rgba(245, 158, 11, 0.08); color: #F59E0B; }
+.status-paid { background: rgba(59, 130, 246, 0.08); color: #3B82F6; }
+
+/* === 订单内容 === */
+.order-body {
+  padding: 24rpx 0;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  padding: 10rpx 0;
+}
+
+.info-label {
+  font-size: 26rpx;
+  color: #b0b0b0;
+  width: 80rpx;
+  flex-shrink: 0;
+  font-weight: 500;
+}
+
+.info-value {
+  font-size: 26rpx;
+  color: #1a1a1a;
+  font-weight: 500;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.info-value.file-name {
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+/* === 订单底部 === */
+.order-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #f5f5f0;
+}
+
+.price-wrap {
+  display: flex;
+  align-items: baseline;
+}
+
+.price-symbol {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #c9a227;
+  margin-right: 2rpx;
+}
+
+.price-num {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #c9a227;
+}
+
+.order-actions {
+  display: flex;
+  gap: 12rpx;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60rpx;
+  padding: 0 28rpx;
+  border-radius: 30rpx;
+  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.action-btn text {
+  font-size: 24rpx;
+  font-weight: 500;
+}
+
+.action-btn:active {
+  transform: scale(0.93);
+}
+
+.action-default {
+  background: #f5f5f0;
+}
+
+.action-default text {
+  color: #666666;
+}
+
+.action-default:active {
+  background: #ebebe6;
+}
+
+.action-confirm {
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.action-confirm text {
+  color: #22C55E;
+  font-weight: 600;
+}
+
+.action-confirm:active {
+  background: rgba(34, 197, 94, 0.18);
+}
+
+.action-delete {
+  background: rgba(196, 30, 58, 0.08);
+}
+
+.action-delete text {
+  color: #c41e3a;
+  font-weight: 600;
+}
+
+.action-delete:active {
+  background: rgba(196, 30, 58, 0.15);
+}
+
+.pay-status-unpaid { color: #F59E0B; font-weight: 600; }
+.pay-status-paid { color: #3B82F6; font-weight: 600; }
+.pay-status-confirmed { color: #22C55E; font-weight: 600; }
+
+/* === 空状态 === */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120rpx 40rpx;
+}
+
+.empty-circle {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2520 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 28rpx;
+  box-shadow: 0 8rpx 24rpx rgba(26, 26, 26, 0.15);
+}
+
+.empty-char {
+  font-size: 56rpx;
+  font-weight: 700;
+  color: #c9a227;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #b0b0b0;
+  font-weight: 500;
+}
+
+/* === 加载中 === */
+.loading-state {
+  text-align: center;
+  padding: 80rpx;
+  color: #b0b0b0;
+  font-size: 26rpx;
+}
+
+/* === 加载更多 === */
+.load-more {
+  text-align: center;
+  padding: 32rpx;
+  color: #c9a227;
+  font-size: 26rpx;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.load-more:active {
+  opacity: 0.6;
+}
+
+.bottom-spacing {
+  height: 60rpx;
+}
