@@ -1,4 +1,4 @@
-const API_BASE = 'https://cloud1-d3gd4qlyef136776e-1453067705.ap-shanghai.app.tcloudbase.com/webAdmin'
+﻿const API_BASE = 'https://cloud1-d3gd4qlyef136776e-1453067705.ap-shanghai.app.tcloudbase.com/webAdmin'
 
 // ===== Global State =====
 let allOrders = []
@@ -8,7 +8,6 @@ let currentPage = 1
 let pageSize = 10
 let searchKeyword = ''
 let notifications = []
-let lastOrderCount = 0
 let currentDetailOrderId = null
 
 // ===== Status Maps =====
@@ -70,21 +69,6 @@ async function apiRequest(action, data = {}) {
     throw new Error('未授权')
   }
   return result
-}
-
-// ===== Notification Sound =====
-function playNotificationSound() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)()
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.connect(gain); gain.connect(ctx.destination)
-    osc.frequency.setValueAtTime(880, ctx.currentTime)
-    osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1)
-    gain.gain.setValueAtTime(0.3, ctx.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3)
-    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.3)
-  } catch (e) { /* ignore */ }
 }
 
 // ===== Toast =====
@@ -383,7 +367,6 @@ async function loadOrders() {
     const res = await apiRequest('getOrders')
     if (res.success) {
       allOrders = res.orders || []
-      lastOrderCount = res.totalCount || 0
       filterOrders()
       renderStats()
       renderFilterTabs()
@@ -398,25 +381,6 @@ async function loadOrders() {
   } finally {
     overlay.classList.remove('show')
   }
-}
-
-// ===== Check New Orders =====
-async function checkNewOrders() {
-  try {
-    const res = await apiRequest('getOrders')
-    if (res.success && res.totalCount > lastOrderCount && lastOrderCount > 0) {
-      const newCount = res.totalCount - lastOrderCount
-      lastOrderCount = res.totalCount
-      const newOrders = (res.orders || []).slice(0, newCount)
-      playNotificationSound()
-      showNewOrderToast({ count: newCount, orders: newOrders })
-      addNotifications({ orders: newOrders })
-      updateNotificationBadge()
-      loadOrders()
-    } else if (res.success) {
-      lastOrderCount = res.totalCount
-    }
-  } catch (e) { console.error(e) }
 }
 
 // ===== New Order Toast =====
@@ -796,7 +760,4 @@ function initMainPage() {
 
   // Load orders
   loadOrders()
-
-  // Poll for new orders every 10 seconds
-  setInterval(checkNewOrders, 10000)
 }
