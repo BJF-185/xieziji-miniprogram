@@ -73,6 +73,7 @@
   padding: 56rpx 36rpx 40rpx;
   box-shadow: 0 2rpx 16rpx rgba(0, 0, 0, 0.04);
   text-align: center;
+  margin-top: 16rpx;
   margin-bottom: 24rpx;
 }
 
@@ -219,6 +220,110 @@
   margin-top: 8rpx;
   display: block;
   line-height: 1.4;
+}
+
+/* === 开启完成提醒卡片 === */
+.notify-card {
+  display: flex;
+  align-items: center;
+  background-color: #ffffff;
+  border-radius: 24rpx;
+  padding: 28rpx 32rpx;
+  margin-top: 24rpx;
+  box-shadow: 0 2rpx 16rpx rgba(0, 0, 0, 0.04);
+}
+
+.notify-card:active {
+  transform: scale(0.99);
+  background-color: #fafafa;
+}
+
+.notify-icon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 20rpx;
+  background-color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 24rpx;
+  position: relative;
+}
+
+/* === 铃铛图标（纯 CSS 绘制）=== */
+.bell-icon {
+  position: relative;
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.bell-body {
+  position: absolute;
+  top: 2rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32rpx;
+  height: 32rpx;
+  background-color: #c9a227;
+  border-radius: 16rpx 16rpx 4rpx 4rpx;
+}
+
+/* 顶部吊环 */
+.bell-body::before {
+  content: '';
+  position: absolute;
+  top: -8rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10rpx;
+  height: 10rpx;
+  border: 3rpx solid #c9a227;
+  border-bottom: none;
+  border-radius: 6rpx 6rpx 0 0;
+  background-color: transparent;
+}
+
+/* 底部撞锤 */
+.bell-clapper {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8rpx;
+  height: 8rpx;
+  background-color: #c9a227;
+  border-radius: 50%;
+}
+
+.notify-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.notify-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+  letter-spacing: 1rpx;
+}
+
+.notify-desc {
+  font-size: 24rpx;
+  color: #999999;
+  margin-top: 6rpx;
+  letter-spacing: 0.5rpx;
+}
+
+.notify-arrow {
+  width: 14rpx;
+  height: 14rpx;
+  border-right: 3rpx solid #cccccc;
+  border-bottom: 3rpx solid #cccccc;
+  transform: rotate(-45deg);
+  margin-left: 16rpx;
+  flex-shrink: 0;
 }
 
 .bottom-spacing {

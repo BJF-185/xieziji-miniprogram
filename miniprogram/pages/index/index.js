@@ -13,6 +13,11 @@ Page({
     })
   },
 
+  // 阻止iOS弹性滚动
+  preventScroll: function () {
+    return
+  },
+
   goOrder: function () {
     wx.navigateTo({ url: '/pages/order/order' })
   },

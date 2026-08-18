@@ -10,8 +10,8 @@
         </view>
         <view class="nav-btn notify-btn" bindtap="requestSubscribeMessage">
           <view class="bell-icon">
-            <view class="bell-body"></view>
-            <view class="bell-top"></view>
+            <view class="bell-body {{notifyEnabled ? 'bell-body-active' : ''}}"></view>
+            <view class="bell-top {{notifyEnabled ? 'bell-top-active' : ''}}"></view>
             <view class="bell-dot" wx:if="{{!notifyEnabled}}"></view>
           </view>
         </view>
@@ -25,96 +25,60 @@
 
   <!-- 内容区域 -->
   <view class="content-area" style="padding-top: {{navTotalHeight}}px;">
-    <!-- 统计Banner -->
-    <view class="stats-banner">
-      <view class="banner-decoration banner-deco-tl"></view>
-      <view class="banner-decoration banner-deco-br"></view>
-      <view class="stats-main">
-        <text class="stats-total-num">{{totalCount}}</text>
-        <text class="stats-total-label">总订单</text>
+    <!-- 横向 stats（点击即筛选，跟"我的"页面一致） -->
+    <view class="stats-bar">
+      <view class="stat-item {{currentFilter === 'all' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="all">
+        <text class="stat-num {{currentFilter === 'all' ? 'active' : ''}}">{{totalCount}}</text>
+        <text class="stat-label {{currentFilter === 'all' ? 'active' : ''}}">全部</text>
       </view>
-      <view class="stats-grid">
-        <view class="stat-item">
-          <text class="stat-num stat-orange">{{unpaidCount}}</text>
-          <text class="stat-label">待付款</text>
-        </view>
-        <view class="stat-item">
-          <text class="stat-num stat-blue">{{paidCount}}</text>
-          <text class="stat-label">待确认</text>
-        </view>
-        <view class="stat-item">
-          <text class="stat-num stat-purple">{{pendingCount}}</text>
-          <text class="stat-label">待处理</text>
-        </view>
-        <view class="stat-item">
-          <text class="stat-num stat-gold">{{doingCount}}</text>
-          <text class="stat-label">进行中</text>
-        </view>
-        <view class="stat-item">
-          <text class="stat-num stat-green">{{doneCount}}</text>
-          <text class="stat-label">已完成</text>
-        </view>
+      <view class="stat-item {{currentFilter === 'unpaid' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="unpaid">
+        <text class="stat-num {{currentFilter === 'unpaid' ? 'active' : ''}}">{{unpaidCount}}</text>
+        <text class="stat-label {{currentFilter === 'unpaid' ? 'active' : ''}}">待付款</text>
+      </view>
+      <view class="stat-item {{currentFilter === 'paid' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="paid">
+        <text class="stat-num {{currentFilter === 'paid' ? 'active' : ''}}">{{paidCount}}</text>
+        <text class="stat-label {{currentFilter === 'paid' ? 'active' : ''}}">待确认</text>
+      </view>
+      <view class="stat-item {{currentFilter === 'pending' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="pending">
+        <text class="stat-num {{currentFilter === 'pending' ? 'active' : ''}}">{{pendingCount}}</text>
+        <text class="stat-label {{currentFilter === 'pending' ? 'active' : ''}}">待处理</text>
+      </view>
+      <view class="stat-item {{currentFilter === 'doing' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="doing">
+        <text class="stat-num {{currentFilter === 'doing' ? 'active' : ''}}">{{doingCount}}</text>
+        <text class="stat-label {{currentFilter === 'doing' ? 'active' : ''}}">进行中</text>
+      </view>
+      <view class="stat-item {{currentFilter === 'done' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="done">
+        <text class="stat-num {{currentFilter === 'done' ? 'active' : ''}}">{{doneCount}}</text>
+        <text class="stat-label {{currentFilter === 'done' ? 'active' : ''}}">已完成</text>
+      </view>
+      <view class="stat-item {{currentFilter === 'cancelled' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="cancelled">
+        <text class="stat-num {{currentFilter === 'cancelled' ? 'active' : ''}}">{{cancelledCount}}</text>
+        <text class="stat-label {{currentFilter === 'cancelled' ? 'active' : ''}}">已取消</text>
       </view>
     </view>
 
-    <!-- 筛选标签 -->
-    <scroll-view scroll-x class="filter-scroll">
-      <view class="filter-bar">
-        <view class="filter-tab {{currentFilter === 'all' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="all">全部</view>
-        <view class="filter-tab {{currentFilter === 'unpaid' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="unpaid">待付款</view>
-        <view class="filter-tab {{currentFilter === 'paid' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="paid">待确认</view>
-        <view class="filter-tab {{currentFilter === 'pending' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="pending">待处理</view>
-        <view class="filter-tab {{currentFilter === 'doing' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="doing">进行中</view>
-        <view class="filter-tab {{currentFilter === 'done' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="done">已完成</view>
-        <view class="filter-tab {{currentFilter === 'cancelled' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="cancelled">已取消</view>
-      </view>
-    </scroll-view>
-
     <!-- 订单列表 -->
     <view class="order-list" wx:if="{{orders.length > 0}}">
-      <view class="order-card" wx:for="{{orders}}" wx:key="_id">
-        <view class="order-header">
-          <view class="order-id-wrap">
-            <text class="order-id-prefix">#</text>
-            <text class="order-id">{{item.orderNo}}</text>
-          </view>
-          <view class="status-tag status-{{item.payStatus === 'paid' ? 'paid' : item.status}}">
-            <text>{{item.payStatus === 'paid' ? '待确认' : item.statusText}}</text>
+      <view class="order-card" wx:for="{{orders}}" wx:key="_id" bindtap="goDetail" data-id="{{item._id}}">
+        <!-- 第一行：文件名 + 状态 tag -->
+        <view class="card-row-top">
+          <text class="file-title">{{item.fileName || '未命名文件'}}</text>
+          <view class="status-tag status-{{item.payStatus === 'paid' && item.status !== 'cancelled' ? 'paid' : item.status}}">
+            <text>{{item.payStatus === 'paid' && item.status !== 'cancelled' ? '待确认' : item.statusText}}</text>
           </view>
         </view>
-        <view class="order-body">
-          <view class="info-row">
-            <text class="info-label">客户</text>
-            <text class="info-value">{{item.name}} · {{item.phone}}</text>
-          </view>
-          <view class="info-row">
-            <text class="info-label">文件</text>
-            <text class="info-value file-name">{{item.fileName}}</text>
-          </view>
-          <view class="info-row">
-            <text class="info-label">支付</text>
-            <text class="info-value pay-status-{{item.payStatus}}">{{item.payStatusText}}</text>
-          </view>
-          <view class="info-row">
-            <text class="info-label">字数</text>
-            <text class="info-value">{{item.wordCount}} 字</text>
-          </view>
+        <!-- 第二行：金额 -->
+        <view class="card-row-mid">
+          <text class="amount-label">金额 </text>
+          <text class="price-symbol">¥</text>
+          <text class="price-num">{{item.priceStr}}</text>
         </view>
-        <view class="order-footer">
-          <view class="price-wrap">
-            <text class="price-symbol">¥</text>
-            <text class="price-num">{{item.priceStr}}</text>
-          </view>
-          <view class="order-actions">
-            <view class="action-btn action-default" bindtap="goDetail" data-id="{{item._id}}">
-              <text>查看</text>
-            </view>
-            <view class="action-btn action-confirm" wx:if="{{item.payStatus === 'paid'}}" bindtap="confirmPayment" data-id="{{item._id}}">
-              <text>确认收款</text>
-            </view>
-            <view class="action-btn action-delete" bindtap="deleteOrder" data-id="{{item._id}}">
-              <text>删除</text>
-            </view>
+        <!-- 第三行：时间 + 查看详情 -->
+        <view class="card-row-bot">
+          <text class="time-text">{{item.createTimeStr}}</text>
+          <view class="detail-link">
+            <text>查看详情</text>
+            <view class="arrow-right"></view>
           </view>
         </view>
       </view>
@@ -122,8 +86,8 @@
 
     <!-- 空状态 -->
     <view class="empty-state" wx:if="{{orders.length === 0 && !loading}}">
-      <view class="empty-circle">
-        <text class="empty-char">管</text>
+      <view class="empty-icon">
+        <text class="empty-icon-char">📋</text>
       </view>
       <text class="empty-text">暂无订单数据</text>
     </view>

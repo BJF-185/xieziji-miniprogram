@@ -1,4 +1,4 @@
-const cloud = require('wx-server-sdk')
+﻿const cloud = require('wx-server-sdk')
 const AdmZip = require('adm-zip')
 
 cloud.init({ env: 'cloud1-d3gd4qlyef136776e' })
@@ -25,6 +25,8 @@ exports.main = async (event, context) => {
       return await sendAdminNotify(event.orderData)
     case 'cancelOrder':
       return await cancelOrder(event, openid)
+    case 'updateOrder':
+      return await updateOrder(event, openid)
     default:
       return { success: false, message: '未知操作' }
   }
@@ -133,7 +135,7 @@ function parseDoc(fileBuffer) {
 
 /**
  * 统计文本中的字数
- * 中文字符每个算1字，英文单词每个算1字，数字串每个算1字
+ * 中文字符每个算1字，英文单词每个算1字，标点符号每个算1字，数字每个算1字
  */
 function countWordsInText(text) {
   if (!text) return 0
@@ -152,10 +154,17 @@ function countWordsInText(text) {
     count += englishWords.length
   }
 
-  // 统计数字串
-  const numbers = text.match(/[0-9]+/g)
+  // 统计数字（每个数字 1 个字）
+  const numbers = text.match(/[0-9]/g)
   if (numbers) {
     count += numbers.length
+  }
+
+  // 统计标点符号（每个标点 1 个字）
+  // 覆盖：中文标点（\u3000-\u303f）、全角符号（\uff00-\uffef）、通用标点（\u2000-\u206f）、英文标点
+  const punctuations = text.match(/[\u3000-\u303f\uff00-\uffef\u2000-\u206f!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/g)
+  if (punctuations) {
+    count += punctuations.length
   }
 
   return count
@@ -172,6 +181,7 @@ async function createOrder(event, openid) {
     price,
     name,
     phone,
+    fontName,
     dormNo,
     notebookSize,
     pageCount,
@@ -200,6 +210,7 @@ async function createOrder(event, openid) {
       price: price,
       name: name,
       phone: phone,
+      fontName: fontName || '',
       dormNo: dormNo || '',
       notebookSize: notebookSize || '',
       pageCount: pageCount || '',
@@ -321,12 +332,96 @@ async function cancelOrder(event, openid) {
 }
 
 /**
+ * 用户修改订单（仅未支付订单可改）
+ */
+async function updateOrder(event, openid) {
+  const {
+    orderId,
+    name,
+    phone,
+    notebookSize,
+    fontName,
+    fileID,
+    fileName,
+    wordCount,
+    price,
+    remark
+  } = event
+
+  if (!orderId) {
+    return { success: false, message: '缺少订单ID' }
+  }
+  if (!fileID || !fileName || !wordCount || !name || !phone) {
+    return { success: false, message: '缺少必要参数' }
+  }
+  if (!/^1[3-9]\d{9}$/.test(phone)) {
+    return { success: false, message: '手机号格式不正确' }
+  }
+
+  try {
+    const orderRes = await db.collection('orders').doc(orderId).get()
+    const order = orderRes.data
+
+    if (!order) {
+      return { success: false, message: '订单不存在' }
+    }
+    if (order.customerOpenid !== openid) {
+      return { success: false, message: '无权操作此订单' }
+    }
+    // 允许未支付 或 已取消（重新下单场景）
+    if (order.status !== 'unpaid' && order.status !== 'cancelled') {
+      return { success: false, message: '当前订单状态不支持修改' }
+    }
+
+    // 清理旧文件（仅当 fileID 变化时）
+    if (order.fileID && order.fileID !== fileID) {
+      try {
+        await cloud.deleteFile({ fileList: [order.fileID] })
+      } catch (delErr) {
+        console.warn('删除旧文件失败（不影响订单更新）', delErr)
+      }
+    }
+
+    // 已取消订单：恢复为未支付 + 支付状态重置（若已支付则保留 paid，让用户重新走支付流程）
+    const updateData = {
+      name: name,
+      phone: phone,
+      notebookSize: notebookSize || '',
+      fontName: fontName || '',
+      fileID: fileID,
+      fileName: fileName,
+      wordCount: wordCount,
+      price: price,
+      remark: remark || '',
+      updateTime: db.serverDate()
+    }
+    if (order.status === 'cancelled') {
+      updateData.status = 'unpaid'
+    }
+
+    const updateRes = await db.collection('orders').doc(orderId).update({
+      data: updateData
+    })
+
+    const updated = (updateRes.stats && updateRes.stats.updated) || updateRes.updated || 0
+    if (updated > 0) {
+      return { success: true, message: '订单已更新' }
+    } else {
+      return { success: false, message: '订单未更新，请重试' }
+    }
+  } catch (err) {
+    console.error('更新订单失败', err)
+    return { success: false, message: '更新订单失败: ' + err.message }
+  }
+}
+
+/**
  * 发送管理员通知（订阅消息）
- * 顾客下单提醒模板字段映射：
- * thing1 - 联系人姓名
- * thing2 - 商品名称/文件名称
- * amount3 - 订单金额
- * time4 - 下单时间
+ * 顾客下单提醒模板字段映射（按微信公众平台模板详情，自定义编号）：
+ * name7     - 联系人姓名
+ * thing10   - 商品名称/文件名称
+ * amount3   - 订单金额
+ * time36    - 下单时间（time 类型，格式 yyyy-MM-dd HH:mm:ss）
  */
 async function sendAdminNotify(orderData) {
   const adminRes = await db.collection('admin').limit(1).get()
@@ -339,15 +434,15 @@ async function sendAdminNotify(orderData) {
   console.log('找到管理员openid:', adminOpenid)
 
   const now = new Date()
-  const timeStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+  const timeStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
 
   try {
     console.log('准备发送订阅消息，模板ID:', ADMIN_NOTIFY_TEMPLATE_ID)
     console.log('消息数据:', {
-      thing1: orderData.name,
-      thing2: orderData.fileName.substring(0, 20),
-      amount3: orderData.price.toFixed(2),
-      time4: timeStr
+      name7: orderData.name,
+      thing10: orderData.fileName.substring(0, 20),
+      amount3: '\u00a5' + orderData.price.toFixed(2),
+      time36: timeStr
     })
     
     const result = await cloud.openapi.subscribeMessage.send({
@@ -355,10 +450,10 @@ async function sendAdminNotify(orderData) {
       templateId: ADMIN_NOTIFY_TEMPLATE_ID,
       page: 'pages/admin/admin',
       data: {
-        thing1: { value: orderData.name },
-        thing2: { value: orderData.fileName.substring(0, 20) },
-        amount3: { value: orderData.price.toFixed(2) },
-        time4: { value: timeStr }
+        name7: { value: orderData.name },
+        thing10: { value: orderData.fileName.substring(0, 20) },
+        amount3: { value: '\u00a5' + orderData.price.toFixed(2) },
+        time36: { value: timeStr }
       }
     })
     console.log('订阅消息发送成功:', result)

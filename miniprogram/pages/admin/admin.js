@@ -25,6 +25,7 @@ Page({
     pendingCount: 0,
     doingCount: 0,
     doneCount: 0,
+    cancelledCount: 0,
     statusBarHeight: 44,
     navTotalHeight: 88,
     notifyEnabled: false
@@ -77,29 +78,43 @@ Page({
       success: (res) => {
         const result = res.result
         if (result.success) {
-          let orders = result.orders
-          if (this.data.currentFilter === 'paid') {
-            orders = orders.filter(o => o.payStatus === 'paid')
-          } else if (this.data.currentFilter !== 'all') {
-            orders = orders.filter(o => o.status === this.data.currentFilter)
-          }
-          const mappedOrders = orders.map(order => {
+          // 1. 先把全部 orders 映射成 mappedOrders（含 displayStatus）
+          const mappedOrders = result.orders.map(order => {
+            const displayStatus = (order.payStatus === 'paid' && order.status === 'unpaid') ? 'paid' : order.status
             return {
               ...order,
               statusText: STATUS_MAP[order.status] || '未知',
               payStatusText: PAY_STATUS_MAP[order.payStatus] || '',
+              displayStatus,
               priceStr: (order.price || 0).toFixed(2),
               createTimeStr: this.formatTime(order.createTime)
             }
           })
+          // 2. 用 mappedOrders 全量统计（按 my 页面口径）
+          const stats = {
+            unpaidCount: mappedOrders.filter(o => o.payStatus === 'unpaid' && o.status === 'unpaid').length,
+            paidCount: mappedOrders.filter(o => o.payStatus === 'paid' && o.status === 'unpaid').length,
+            pendingCount: mappedOrders.filter(o => o.status === 'pending').length,
+            doingCount: mappedOrders.filter(o => o.status === 'doing').length,
+            doneCount: mappedOrders.filter(o => o.status === 'done').length,
+            cancelledCount: mappedOrders.filter(o => o.status === 'cancelled').length
+          }
+          // 3. 根据 currentFilter 筛选展示的 orders
+          const filter = this.data.currentFilter
+          let displayOrders = mappedOrders
+          if (filter === 'unpaid') displayOrders = mappedOrders.filter(o => o.payStatus === 'unpaid' && o.status === 'unpaid')
+          else if (filter === 'paid') displayOrders = mappedOrders.filter(o => o.payStatus === 'paid' && o.status === 'unpaid')
+          else if (filter !== 'all') displayOrders = mappedOrders.filter(o => o.status === filter)
+          // 4. setData
           this.setData({
-            orders: mappedOrders,
+            orders: displayOrders,
             totalCount: result.totalCount,
-            unpaidCount: result.unpaidCount || 0,
-            paidCount: result.paidCount || 0,
-            pendingCount: result.pendingCount,
-            doingCount: result.doingCount,
-            doneCount: result.doneCount
+            unpaidCount: stats.unpaidCount,
+            paidCount: stats.paidCount,
+            pendingCount: stats.pendingCount,
+            doingCount: stats.doingCount,
+            doneCount: stats.doneCount,
+            cancelledCount: stats.cancelledCount
           })
         } else if (result.message === '未登录或登录已过期') {
           wx.removeStorageSync('isAdmin')
@@ -216,7 +231,13 @@ Page({
     })
   },
 
-  requestSubscribeMessage: function () {
+
+
+  callPhone: function (e) {
+    const phone = e.currentTarget.dataset.phone
+    if (!phone) return
+    wx.makePhoneCall({ phoneNumber: phone })
+  },  requestSubscribeMessage: function () {
     wx.requestSubscribeMessage({
       tmplIds: [TEMPLATE_ID],
       success: (res) => {

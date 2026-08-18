@@ -1,13 +1,10 @@
-<view class="page-container page-fullscreen" style="height: {{windowHeight}}px;">
-  <!-- 全屏背景图：aspectFill等比铺满不变形，左右居中裁剪，竖向底部对齐顶部裁剪 -->
-  <image class="bg-image" src="/images/home-bg.png" mode="aspectFill" style="position: absolute; left: 0rpx; top: 0rpx"></image>
-  
-  <!-- 顶部暗角遮罩 -->
-  <view class="bg-vignette-top"></view>
+<view class="page-container page-fullscreen" style="height: {{windowHeight}}px;" catchtouchmove="preventScroll">
+  <!-- 全屏背景图：aspectFill等比铺满不变形，左右居中裁剪，竖向底部对齐+上移 -->
+  <image class="bg-image" src="/images/home-bg.png" mode="aspectFill"></image>
 
-  <!-- 立即预约按钮 -->
+  <!-- 立即书写按钮 -->
   <view class="bottom-bar">
-    <view class="btn-primary" bindtap="goOrder">立即预约</view>
+    <view class="btn-primary" bindtap="goOrder">立即书写</view>
   </view>
 
   <!-- 底部导航区域 -->

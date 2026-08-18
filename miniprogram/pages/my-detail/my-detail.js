@@ -64,6 +64,13 @@ Page({
     wx.navigateBack({ delta: 1 })
   },
 
+  onShow: function () {
+    // 从编辑页返回时自动刷新数据
+    if (this.data.orderId) {
+      this.loadOrderDetail()
+    }
+  },
+
   onLoad: function (options) {
     const systemInfo = wx.getSystemInfoSync()
     const statusBarHeight = systemInfo.statusBarHeight || 44
@@ -132,9 +139,36 @@ Page({
 
   goPayment: function () {
     const order = this.data.order
+    // 在真实用户点击事件中请求订阅消息授权（不影响支付跳转）
+    // 微信限制：必须在用户点击事件中同步调用
+    if (CUSTOMER_DONE_TEMPLATE_ID && CUSTOMER_DONE_TEMPLATE_ID !== 'PENDING_APPLY') {
+      wx.requestSubscribeMessage({
+        tmplIds: [CUSTOMER_DONE_TEMPLATE_ID],
+        success: (res) => {
+          if (res[CUSTOMER_DONE_TEMPLATE_ID] === 'accept') {
+            wx.setStorageSync('customerDoneNotifyEnabled', true)
+          }
+        },
+        complete: () => {
+          // 无论授权结果都继续跳转
+          this.navigateToPayment(order)
+        }
+      })
+    } else {
+      this.navigateToPayment(order)
+    }
+  },
+
+  navigateToPayment: function (order) {
     wx.navigateTo({
       url: `/pages/payment/payment?orderId=${order._id}&orderNo=${order.orderNo}&name=${encodeURIComponent(order.name)}&phone=${order.phone}&fileName=${encodeURIComponent(order.fileName)}&wordCount=${order.wordCount}&price=${order.price}`
     })
+  },
+
+  goReorder: function () {
+    const order = this.data.order
+    // 未支付 → 编辑原订单；已取消 → 编辑并恢复为未支付
+    wx.navigateTo({ url: `/pages/order/order?orderId=${order._id}` })
   },
 
   cancelOrder: function () {

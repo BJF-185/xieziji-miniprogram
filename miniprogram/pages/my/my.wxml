@@ -1,7 +1,7 @@
 <view class="page-container page-with-tabbar">
   <view class="custom-navbar">
     <view class="nav-placeholder" style="height: {{statusBarHeight}}px;"></view>
-    <view class="navbar-content">
+    <view class="navbar-content" bindlongtap="onAdminEntry">
       <view class="navbar-left"></view>
       <view class="navbar-center">
         <text class="navbar-title">我的</text>
@@ -31,6 +31,10 @@
       <view class="filter-item {{currentFilter === 'done' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="done">
         <text class="filter-num">{{doneCount}}</text>
         <text class="filter-label">已完成</text>
+      </view>
+      <view class="filter-item {{currentFilter === 'cancelled' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="cancelled">
+        <text class="filter-num">{{cancelledCount}}</text>
+        <text class="filter-label">已取消</text>
       </view>
     </view>
 

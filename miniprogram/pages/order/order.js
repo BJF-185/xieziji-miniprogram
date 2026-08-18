@@ -1,4 +1,4 @@
-const PRICE_PER_WORD = 0.01  // 每字0.01元
+const PRICE_PER_WORD = 0.005  // 每字0.01元
 
 Page({
   data: {
@@ -6,7 +6,17 @@ Page({
     phone: '',
     notebookSize: '',
     notebookIndex: -1,
-    notebookList: ['仰恩纸（免费提供）', '自己的本子或其他（需联系）'],
+    notebookList: ['仰恩纸', '自己的本子或其他（需联系）'],
+    fontList: [
+      { id: 0, name: '楷书',     image: '/images/fonts/1.png' },
+      { id: 1, name: '硬笔',     image: '/images/fonts/2.png' },
+      { id: 2, name: '硬笔行书', image: '/images/fonts/3.png' },
+      { id: 3, name: '行书',     image: '/images/fonts/4.png' },
+      { id: 4, name: '行楷',     image: '/images/fonts/5.png' },
+      { id: 5, name: '行草',     image: '/images/fonts/6.png' },
+      { id: 6, name: '草书',     image: '/images/fonts/7.png' }
+    ],
+    fontIndex: 1,
     remark: '',
     fileInfo: {},
     hasFile: false,
@@ -21,15 +31,112 @@ Page({
     subtotalNum: 0,
     totalPrice: '0.00',
     statusBarHeight: 44,
-    navTotalHeight: 88
+    navTotalHeight: 88,
+    isEdit: false,
+    orderId: '',
+    originalFileID: ''
   },
 
-  onLoad: function () {
+  onLoad: function (options) {
     const systemInfo = wx.getSystemInfoSync()
     const statusBarHeight = systemInfo.statusBarHeight || 44
     this.setData({
       statusBarHeight: statusBarHeight,
       navTotalHeight: statusBarHeight + 44
+    })
+
+    if (options && options.orderId) {
+      this.setData({ orderId: options.orderId, isEdit: true })
+      this.loadOrderForEdit(options.orderId)
+    }
+  },
+
+  onShow: function () {
+    // 已经在编辑模式：不再处理（用户从 my-detail 主动进入）
+    if (this.data.isEdit) return
+
+    // 触发条件：从提交流程返回时 submitting 为 true
+    // （首次进入或 tab 切换回来时 submitting 为 false）
+    if (this.data.submitting !== true) return
+
+    // 1) 修复「提交中」卡死
+    this.setData({ submitting: false })
+
+    // 2) 自动加载刚提交的订单为更新模式
+    const app = getApp()
+    const last = (app && app.globalData && app.globalData.lastSubmittedOrder)
+      || wx.getStorageSync('lastSubmittedOrder')
+
+    if (last && last.orderId) {
+      const ageMs = Date.now() - (last.timestamp || 0)
+      if (ageMs < 24 * 60 * 60 * 1000) {
+        this.setData({ orderId: last.orderId, isEdit: true })
+        this.loadOrderForEdit(last.orderId)
+        // 加载一次后清 globalData，避免重复触发
+        if (app && app.globalData) {
+          app.globalData.lastSubmittedOrder = null
+        }
+      }
+    }
+  },
+
+  // 编辑模式：加载已有订单数据
+  loadOrderForEdit: function (orderId) {
+    wx.showLoading({ title: '加载中...' })
+    wx.cloud.callFunction({
+      name: 'getOrders',
+      data: { action: 'getMyDetail', orderId: orderId },
+      success: (res) => {
+        wx.hideLoading()
+        const result = res.result
+        if (!result.success) {
+          wx.showModal({ title: '加载失败', content: result.message || '订单不存在', showCancel: false,
+            success: () => wx.navigateBack() })
+          return
+        }
+        const order = result.order
+        if (order.status !== 'unpaid' && order.status !== 'cancelled') {
+          wx.showModal({ title: '无法修改', content: '当前订单状态不支持修改', showCancel: false,
+            success: () => wx.navigateBack() })
+          return
+        }
+
+        // 反查 notebookIndex
+        const notebookIndex = this.data.notebookList.indexOf(order.notebookSize)
+        // 反查 fontIndex（找不到时默认选「硬笔」，兼容未保存 fontName 的旧订单）
+        let fontIndex = this.data.fontList.findIndex(f => f.name === order.fontName)
+        if (fontIndex < 0) fontIndex = 1
+
+        this.setData({
+          name: order.name || '',
+          phone: order.phone || '',
+          nameValid: !!(order.name && order.name.trim().length >= 2),
+          phoneValid: /^1[3-9]\d{9}$/.test(order.phone || ''),
+          notebookIndex: notebookIndex,
+          notebookSize: order.notebookSize || '',
+          fontIndex: fontIndex,
+          remark: order.remark || '',
+          fileInfo: {
+            name: order.fileName,
+            path: '',
+            size: 0,
+            sizeStr: '已上传'
+          },
+          hasFile: true,
+          cloudFileID: order.fileID || '',
+          originalFileID: order.fileID || '',
+          wordCount: order.wordCount || 0,
+          subtotal: (order.price || 0).toFixed(2),
+          subtotalNum: order.price || 0,
+          totalPrice: (order.price || 0).toFixed(2)
+        }, this.checkCanSubmit)
+      },
+      fail: (err) => {
+        wx.hideLoading()
+        console.error('加载订单失败', err)
+        wx.showModal({ title: '加载失败', content: '网络错误，请重试', showCancel: false,
+          success: () => wx.navigateBack() })
+      }
     })
   },
 
@@ -53,9 +160,17 @@ Page({
     this.setData({ remark: e.detail.value })
   },
 
-  onNotebookChange: function (e) {
-    const index = e.detail.value
-    this.setData({ notebookIndex: index, notebookSize: this.data.notebookList[index] })
+  selectNotebook: function (e) {
+    const index = parseInt(e.currentTarget.dataset.index)
+    this.setData({
+      notebookIndex: index,
+      notebookSize: this.data.notebookList[index]
+    }, this.checkCanSubmit)
+  },
+
+  selectFont: function (e) {
+    const index = parseInt(e.currentTarget.dataset.index)
+    this.setData({ fontIndex: index }, this.checkCanSubmit)
   },
 
   // 选择文件
@@ -222,6 +337,8 @@ Page({
   checkCanSubmit: function () {
     const canSubmit = this.data.nameValid &&
                       this.data.phoneValid &&
+                      this.data.notebookIndex >= 0 &&
+                      this.data.fontIndex >= 0 &&
                       this.data.hasFile &&
                       this.data.wordCount > 0
     this.setData({ canSubmit: canSubmit })
@@ -238,35 +355,73 @@ Page({
       return
     }
 
-    this.setData({ submitting: true })
-    wx.showLoading({ title: '提交中...' })
+    // 验证纸张和字体
+    if (this.data.notebookIndex < 0) {
+      wx.showToast({ title: '请选择书写纸张', icon: 'none' })
+      return
+    }
+    if (this.data.fontIndex < 0) {
+      wx.showToast({ title: '请选择书写字体', icon: 'none' })
+      return
+    }
 
-    // 调用云函数创建订单
+    const fontName = this.data.fontList[this.data.fontIndex].name
+    const isEdit = this.data.isEdit
+
+    this.setData({ submitting: true })
+    wx.showLoading({ title: isEdit ? '更新中...' : '提交中...' })
+
+    const callData = {
+      action: isEdit ? 'updateOrder' : 'createOrder',
+      fileID: this.data.cloudFileID,
+      fileName: this.data.fileInfo.name,
+      wordCount: this.data.wordCount,
+      price: parseFloat(this.data.totalPrice),
+      name: this.data.name.trim(),
+      phone: phone,
+      notebookSize: this.data.notebookSize,
+      fontName: fontName,
+      remark: this.data.remark.trim()
+    }
+    if (isEdit) callData.orderId = this.data.orderId
+
+    // 调用云函数创建/更新订单
     wx.cloud.callFunction({
       name: 'createOrder',
-      data: {
-        action: 'createOrder',
-        fileID: this.data.cloudFileID,
-        fileName: this.data.fileInfo.name,
-        wordCount: this.data.wordCount,
-        price: parseFloat(this.data.totalPrice),
-        name: this.data.name.trim(),
-        phone: phone,
-        notebookSize: this.data.notebookSize.trim(),
-        remark: this.data.remark.trim()
-      },
+      data: callData,
       success: (res) => {
         wx.hideLoading()
         const result = res.result
         if (result.success) {
-          wx.navigateTo({
-            url: `/pages/payment/payment?orderId=${result.orderId}&orderNo=${result.orderNo}&name=${encodeURIComponent(this.data.name.trim())}&phone=${this.data.phone}&fileName=${encodeURIComponent(this.data.fileInfo.name)}&wordCount=${this.data.wordCount}&price=${this.data.totalPrice}`
-          })
+          if (isEdit) {
+            // 编辑模式：清除刚创建的订单ID（防止 onShow 再次自动加载）
+            wx.removeStorageSync('lastSubmittedOrder')
+            const editApp = getApp()
+            if (editApp && editApp.globalData) {
+              editApp.globalData.lastSubmittedOrder = null
+            }
+            // 编辑模式：返回详情页
+            wx.showToast({ title: '已更新', icon: 'success' })
+            setTimeout(() => {
+              wx.redirectTo({ url: `/pages/my-detail/my-detail?id=${this.data.orderId}` })
+            }, 600)
+          } else {
+            // 创建模式：保存订单ID，供 onShow 自动加载
+            const newOrder = { orderId: result.orderId, timestamp: Date.now() }
+            wx.setStorageSync('lastSubmittedOrder', newOrder)
+            const createApp = getApp()
+            if (createApp && createApp.globalData) {
+              createApp.globalData.lastSubmittedOrder = newOrder
+            }
+            wx.navigateTo({
+              url: `/pages/payment/payment?orderId=${result.orderId}&orderNo=${result.orderNo}&name=${encodeURIComponent(this.data.name.trim())}&phone=${this.data.phone}&fileName=${encodeURIComponent(this.data.fileInfo.name)}&wordCount=${this.data.wordCount}&price=${this.data.totalPrice}`
+            })
+          }
         } else {
           this.setData({ submitting: false })
           wx.showModal({
-            title: '提交失败',
-            content: result.message || '预约提交失败，请重试',
+            title: isEdit ? '更新失败' : '提交失败',
+            content: result.message || (isEdit ? '订单更新失败，请重试' : '预约提交失败，请重试'),
             showCancel: false
           })
         }
@@ -274,9 +429,9 @@ Page({
       fail: (err) => {
         wx.hideLoading()
         this.setData({ submitting: false })
-        console.error('创建订单失败', err)
+        console.error((isEdit ? '更新' : '创建') + '订单失败', err)
         wx.showModal({
-          title: '提交失败',
+          title: isEdit ? '更新失败' : '提交失败',
           content: '网络错误，请重试',
           showCancel: false
         })

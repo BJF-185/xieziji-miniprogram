@@ -65,7 +65,7 @@ Page({
       success: () => {
         this.setData({ hasCopiedAmount: true })
         wx.showToast({
-          title: '金额已复制',
+          title: '估价已复制',
           icon: 'success'
         })
       },
@@ -79,7 +79,7 @@ Page({
   },
 
   onQrError: function () {
-    console.log('收款码图片加载失败')
+    console.log('图片加载失败')
   },
 
   previewQrCode: function () {
@@ -102,10 +102,10 @@ Page({
     if (this.data.confirming) return
 
     wx.showModal({
-      title: '确认已转账',
-      content: `请确认已通过微信转账 ¥${this.data.totalPrice}`,
-      confirmText: '已转账',
-      cancelText: '还没',
+      title: '完成支付',
+      content: '请确认已支付正确金额，收到正确金额后开始书写',
+      confirmText: '已支付',
+      cancelText: '再等等',
       confirmColor: '#1a1a1a',
       success: (res) => {
         if (res.confirm) {
@@ -132,9 +132,7 @@ Page({
         const result = res.result
         if (result.success) {
           this.clearPaymentState()
-          wx.redirectTo({
-            url: `/pages/success/success?orderId=${this.data.orderId}&wordCount=${this.data.wordCount}&paid=true`
-          })
+          this.goToSuccess()
         } else {
           this.setData({ confirming: false, paymentSubmitted: false })
           wx.showModal({
@@ -147,7 +145,7 @@ Page({
       fail: (err) => {
         wx.hideLoading()
         this.setData({ confirming: false, paymentSubmitted: false })
-        console.error('提交支付失败', err)
+        console.error('提交失败', err)
         wx.showModal({
           title: '提交失败',
           content: '网络错误，请重试',
@@ -173,5 +171,11 @@ Page({
 
   clearPaymentState: function () {
     wx.removeStorageSync('pendingPayment')
+  },
+
+  goToSuccess: function () {
+    wx.redirectTo({
+      url: `/pages/success/success?orderId=${this.data.orderId}&wordCount=${this.data.wordCount}&paid=true`
+    })
   }
 })

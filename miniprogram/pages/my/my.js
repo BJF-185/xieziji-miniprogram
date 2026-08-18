@@ -23,6 +23,7 @@ Page({
     queuingCount: 0,
     processingCount: 0,
     doneCount: 0,
+    cancelledCount: 0,
     statusBarHeight: 44,
     navTotalHeight: 88,
     currentTab: 'my'
@@ -91,7 +92,11 @@ Page({
           const mappedOrders = result.orders.map(order => {
             let displayStatus = order.status
             let statusText = STATUS_MAP[order.status] || '未知'
-            if (order.payStatus === 'paid') {
+            if (order.status === 'cancelled') {
+              // 已取消订单：无论 payStatus 是什么都显示「已取消」
+              displayStatus = 'cancelled'
+              statusText = '已取消'
+            } else if (order.payStatus === 'paid') {
               displayStatus = 'pending'
               statusText = '排队中'
             } else if (order.payStatus === 'confirmed') {
@@ -112,7 +117,8 @@ Page({
             unpaidCount: mappedOrders.filter(o => o.payStatus === 'unpaid' && o.status === 'unpaid').length,
             queuingCount: mappedOrders.filter(o => o.payStatus === 'paid' || o.status === 'pending').length,
             processingCount: mappedOrders.filter(o => o.status === 'doing').length,
-            doneCount: mappedOrders.filter(o => o.status === 'done').length
+            doneCount: mappedOrders.filter(o => o.status === 'done').length,
+            cancelledCount: mappedOrders.filter(o => o.status === 'cancelled').length
           }, () => {
             this.applyFilter()
           })
@@ -154,6 +160,13 @@ Page({
 
   onTabMy: function () {
     wx.pageScrollTo({ scrollTop: 0, duration: 200 })
+  },
+
+  // 长按导航栏进入管理员入口
+  onAdminEntry: function () {
+    wx.navigateTo({
+      url: '/pages/admin-login/admin-login'
+    })
   },
 
   goOrder: function () {

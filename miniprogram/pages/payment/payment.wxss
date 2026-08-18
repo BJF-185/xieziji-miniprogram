@@ -206,6 +206,21 @@
   opacity: 0.8;
 }
 
+.guide-card {
+  margin: 20rpx auto 0;
+  width: 90%;
+  padding: 20rpx;
+  border-radius: 20rpx;
+  background-color: transparent;
+  box-shadow: 0 2rpx 20rpx rgba(0, 0, 0, 0.12);
+}
+
+.guide-image {
+  width: 100%;
+  display: block;
+  border-radius: 16rpx;
+}
+
 .qr-wrapper {
   margin: 20rpx auto 0;
   width: 440rpx;

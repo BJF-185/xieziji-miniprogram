@@ -6,8 +6,8 @@
         <view class="back-icon"></view>
       </view>
       <view class="navbar-center">
-        <text class="navbar-title">支付订单</text>
-        <text class="navbar-subtitle">订单号：{{orderNo}}</text>
+        <text class="navbar-title">支付</text>
+        <text class="navbar-subtitle">编号：{{orderNo}}</text>
       </view>
       <view class="navbar-right"></view>
     </view>
@@ -15,13 +15,13 @@
 
   <view class="content-area" style="padding-top: {{navTotalHeight}}px;">
     <view class="guide-card">
-      <view class="guide-title">请按以下步骤完成支付</view>
+      <view class="guide-title">请按以下步骤完成</view>
 
       <view class="step-item">
         <view class="step-circle">1</view>
         <view class="step-body">
           <view class="step-main">
-            <text class="step-text">复制订单金额</text>
+            <text class="step-text">复制价格</text>
             <view class="step-right">
               <view class="step-amount">
                 <text class="amount-symbol">¥</text>
@@ -38,10 +38,10 @@
       <view class="step-item">
         <view class="step-circle">2</view>
         <view class="step-body">
-          <text class="step-text">点击图片查看收款码大图</text>
-          <text class="step-subtext">长按图片保存到相册</text>
-          <view class="qr-wrapper" bindtap="previewQrCode">
-            <image class="qr-image" src="{{wechatQRUrl}}" mode="aspectFit" binderror="onQrError"></image>
+          <text class="step-text">回到微信</text>
+          <text class="step-subtext">在群里找到二维码</text>
+          <view class="guide-card">
+            <image class="guide-image" src="/images/guide-qr.png" mode="widthFix"></image>
           </view>
         </view>
       </view>
@@ -49,16 +49,15 @@
       <view class="step-item">
         <view class="step-circle">3</view>
         <view class="step-body">
-          <text class="step-text">退出小程序，打开微信扫一扫</text>
-          <text class="step-subtext">选择上面保存的收款码</text>
+          <text class="step-text">长按二维码识别</text>
+          <text class="step-subtext">粘贴价格后支付</text>
         </view>
       </view>
 
       <view class="step-item">
         <view class="step-circle">4</view>
         <view class="step-body">
-          <text class="step-text">完成付款后回到小程序</text>
-          <text class="step-subtext">点击下方按钮通知我们</text>
+          <text class="step-text">点击下方按钮完成</text>
         </view>
       </view>
     </view>
@@ -68,8 +67,8 @@
 
   <view class="bottom-bar">
     <view class="confirm-btn {{paymentSubmitted ? 'submitted' : ''}}" bindtap="{{paymentSubmitted ? '' : 'confirmPayment'}}">
-      <text wx:if="{{paymentSubmitted}}">已转账</text>
-      <text wx:else>已完成支付</text>
+      <text wx:if="{{paymentSubmitted}}">已完成</text>
+      <text wx:else>完成</text>
     </view>
   </view>
 </view>

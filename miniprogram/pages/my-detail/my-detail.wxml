@@ -13,7 +13,7 @@
   </view>
 
   <view class="content-area" style="padding-top: {{navHeight}}px;">
-    <view class="status-card status-{{order.payStatus === 'unpaid' && order.status === 'unpaid' ? 'unpaid' : (order.status === 'doing' ? 'doing' : (order.status === 'done' ? 'done' : 'pending'))}}">
+    <view class="status-card status-{{order.status === 'cancelled' ? 'cancelled' : (order.status === 'doing' ? 'doing' : (order.status === 'done' ? 'done' : (order.payStatus === 'unpaid' && order.status === 'unpaid' ? 'unpaid' : 'pending')))}}">
       <text class="status-main-text">{{statusText}}</text>
       <text class="status-sub-text">{{statusDesc}}</text>
     </view>
@@ -84,8 +84,11 @@
   </view>
 
   <view class="bottom-bar">
-    <block wx:if="{{order.payStatus === 'unpaid'}}">
+    <block wx:if="{{order.payStatus === 'unpaid' && order.status !== 'cancelled'}}">
       <view class="btn-primary" bindtap="goPayment">立即支付</view>
+    </block>
+    <block wx:if="{{order.payStatus === 'unpaid' || order.status === 'cancelled'}}">
+      <view class="btn-outline" bindtap="goReorder">重新下单</view>
     </block>
     <block wx:if="{{order.status !== 'cancelled' && order.status !== 'doing' && order.status !== 'done'}}">
       <view class="btn-outline" bindtap="cancelOrder">取消订单</view>

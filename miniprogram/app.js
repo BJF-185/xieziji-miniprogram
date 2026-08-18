@@ -11,7 +11,8 @@ App({
     this.globalData = {
       userInfo: null,
       openid: null,
-      pendingPayment: null
+      pendingPayment: null,
+      lastSubmittedOrder: null
     }
   },
 

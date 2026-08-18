@@ -61,7 +61,7 @@
 
 /* === 内容区域 === */
 .content-area {
-  padding: 20rpx 32rpx 40rpx;
+  padding: 32rpx 32rpx 40rpx;
 }
 
 /* === 卡片 === */
@@ -95,11 +95,6 @@
   flex-shrink: 0;
 }
 
-.required-mark {
-  color: #ef4444;
-  margin-left: 4rpx;
-}
-
 .row-input {
   flex: 1;
   font-size: 28rpx;
@@ -109,8 +104,57 @@
   line-height: 72rpx;
 }
 
+/* === 填写框（上下结构） === */
+.form-field {
+  margin-bottom: 24rpx;
+}
+
+.form-field:last-child {
+  margin-bottom: 0;
+}
+
+.form-field-label {
+  display: block;
+  font-size: 26rpx;
+  color: #999999;
+  margin-bottom: 12rpx;
+}
+
+.form-input-box {
+  display: flex;
+  align-items: center;
+  height: 80rpx;
+  padding: 0 24rpx;
+  background-color: #fafafa;
+  border: 2rpx solid #e8e6e3;
+  border-radius: 12rpx;
+}
+
+.form-input {
+  flex: 1;
+  font-size: 30rpx;
+  color: #1a1a1a;
+  height: 80rpx;
+  line-height: 80rpx;
+}
+
 .input-placeholder {
   color: #d0cfcc;
+}
+
+/* === 验证打勾图标 === */
+.check-icon {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background-color: #22C55E;
+  color: #ffffff;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 12rpx;
+  flex-shrink: 0;
 }
 
 .info-divider {
@@ -119,28 +163,37 @@
   margin: 4rpx 0;
 }
 
-/* === 选择器 === */
-.row-picker {
+/* === 纸张选项按钮 === */
+.option-row {
+  align-items: flex-start;
+  padding-top: 8rpx;
+}
+
+.option-btns {
+  flex: 1;
+  display: flex;
+  gap: 16rpx;
+}
+
+.option-btn {
   flex: 1;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  font-size: 28rpx;
-  color: #1a1a1a;
+  justify-content: center;
   height: 72rpx;
+  border-radius: 16rpx;
+  border: 2rpx solid #e8e6e3;
+  background-color: #fafafa;
+  font-size: 26rpx;
+  color: #666666;
+  font-weight: 500;
+  transition: all 0.2s;
 }
 
-.picker-placeholder {
-  color: #d0cfcc;
-}
-
-.picker-arrow {
-  width: 16rpx;
-  height: 16rpx;
-  border-right: 3rpx solid #b0b0b0;
-  border-bottom: 3rpx solid #b0b0b0;
-  transform: rotate(-45deg);
-  margin-left: 12rpx;
+.option-btn-active {
+  border-color: #1a1a1a;
+  background-color: #1a1a1a;
+  color: #ffffff;
 }
 
 /* === 表单提示 === */
@@ -148,9 +201,68 @@
   font-size: 24rpx;
   color: #F59E0B;
   margin-top: 16rpx;
-  padding: 12rpx 16rpx;
-  background-color: rgba(245, 158, 11, 0.08);
-  border-radius: 12rpx;
+  padding-left: 4rpx;
+}
+
+/* === 字体选择 === */
+.font-picker {
+  margin-top: 8rpx;
+}
+
+.font-section-title {
+  font-size: 28rpx;
+  color: #b0b0b0;
+  font-weight: 500;
+  margin-bottom: 20rpx;
+  display: block;
+}
+
+.font-preview-card {
+  border-radius: 20rpx;
+  overflow: hidden;
+  background-color: transparent;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 20rpx rgba(0, 0, 0, 0.12);
+}
+
+.font-preview-img {
+  width: 100%;
+  display: block;
+  border-radius: 16rpx;
+}
+
+.font-btn-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16rpx;
+}
+
+.font-pill {
+  width: auto;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16rpx;
+  border: 2rpx solid #e8e6e3;
+  background-color: #fafafa;
+  transition: all 0.2s;
+}
+
+.font-pill-active {
+  border-color: #1a1a1a;
+  background-color: #1a1a1a;
+}
+
+.font-pill-text {
+  font-size: 26rpx;
+  color: #666666;
+  font-weight: 500;
+}
+
+.font-pill-active .font-pill-text {
+  color: #ffffff;
+  font-weight: 600;
 }
 
 /* === 文件上传 === */
@@ -392,3 +504,10 @@
   color: #b0b0b0;
   margin-top: 12rpx;
 }
+
+
+/* === iOS 订单信息卡片下移 === */
+.content-area .card:first-child {
+  margin-top: 30rpx;
+}
+

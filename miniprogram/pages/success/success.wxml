@@ -62,6 +62,20 @@
       </view>
     </view>
 
+    <view class="notify-card" bindtap="requestNotify">
+      <view class="notify-icon">
+        <view class="bell-icon">
+          <view class="bell-body"></view>
+          <view class="bell-clapper"></view>
+        </view>
+      </view>
+      <view class="notify-text">
+        <text class="notify-title">{{notifyEnabled ? '已开启完成提醒' : '开启完成提醒'}}</text>
+        <text class="notify-desc">{{notifyEnabled ? '书写完成后将自动通知您' : '点击开启，书写完成后第一时间通知'}}</text>
+      </view>
+      <view class="notify-arrow"></view>
+    </view>
+
     <view class="bottom-spacing"></view>
   </view>
 
