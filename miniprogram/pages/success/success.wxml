@@ -70,8 +70,8 @@
         </view>
       </view>
       <view class="notify-text">
-        <text class="notify-title">{{notifyEnabled ? '已开启完成提醒' : '开启完成提醒'}}</text>
-        <text class="notify-desc">{{notifyEnabled ? '书写完成后将自动通知您' : '点击开启，书写完成后第一时间通知'}}</text>
+        <text class="notify-title">{{notifyState === 'accept' ? '已开启完成提醒' : notifyState === 'reject' ? '需要重新授权' : '开启完成提醒'}}</text>
+        <text class="notify-desc">{{notifyState === 'accept' ? '书写完成后将自动通知您' : notifyState === 'reject' ? '点击按指引到微信设置中重新授权' : '点击开启，书写完成后第一时间通知'}}</text>
       </view>
       <view class="notify-arrow"></view>
     </view>

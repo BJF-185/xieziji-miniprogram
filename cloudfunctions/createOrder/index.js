@@ -1,4 +1,4 @@
-﻿const cloud = require('wx-server-sdk')
+const cloud = require('wx-server-sdk')
 const AdmZip = require('adm-zip')
 
 cloud.init({ env: 'cloud1-d3gd4qlyef136776e' })
@@ -27,9 +27,30 @@ exports.main = async (event, context) => {
       return await cancelOrder(event, openid)
     case 'updateOrder':
       return await updateOrder(event, openid)
+    case 'getOpenid':
+      return { success: true, openid: openid || null, appid: wxContext.APPID }
+    case 'setupAdminNotify':
+      return await setupAdminNotify(openid)
     default:
       return { success: false, message: '未知操作' }
   }
+}
+
+// 把当前用户的真实 openid 存到 admin 集合，供 sendAdminNotify 发送"顾客下单提醒"使用
+async function setupAdminNotify(openid) {
+  if (!openid) {
+    return { success: false, message: '当前用户没有 openid' }
+  }
+  const res = await db.collection('admin').limit(1).get()
+  if (!res.data || res.data.length === 0) {
+    return { success: false, message: 'admin 记录不存在，请先登录网页后台初始化' }
+  }
+  const adminId = res.data[0]._id
+  await db.collection('admin').doc(adminId).update({
+    data: { notifyOpenid: openid, notifySetupTime: db.serverDate() }
+  })
+  console.log('已设置管理员通知 openid:', openid)
+  return { success: true, message: '设置成功', openid }
 }
 
 /**
@@ -430,8 +451,13 @@ async function sendAdminNotify(orderData) {
     return { success: false, message: '未找到管理员记录' }
   }
 
-  const adminOpenid = adminRes.data[0].openid
-  console.log('找到管理员openid:', adminOpenid)
+  const admin = adminRes.data[0]
+  // 优先用管理员设置的真实 openid（notifyOpenid），fallback 到旧字段
+  const adminOpenid = admin.notifyOpenid || admin.openid
+  console.log('找到管理员openid:', adminOpenid, '是否真实openid:', !!admin.notifyOpenid)
+  if (!admin.notifyOpenid) {
+    console.warn('管理员 notifyOpenid 未设置，请登录 admin 页面完成 setupAdminNotify 一次')
+  }
 
   const now = new Date()
   const timeStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`

@@ -1,4 +1,4 @@
-const STATUS_MAP = {
+﻿const STATUS_MAP = {
   'unpaid': '待付款',
   'pending': '待处理',
   'doing': '进行中',
@@ -44,6 +44,17 @@ Page({
       wx.redirectTo({ url: '/pages/admin-login/admin-login' })
       return
     }
+    // 把当前管理员的真实 openid 存到 admin 集合，让'顾客下单提醒'能发到这个号
+    wx.cloud.callFunction({
+      name: 'createOrder',
+      data: { action: 'setupAdminNotify' },
+      success: (res) => {
+        console.log('管理员通知 openid 设置:', res.result)
+      },
+      fail: (err) => {
+        console.error('设置管理员通知 openid 失败', err)
+      }
+    })
     this.loadOrders()
   },
 
@@ -274,3 +285,4 @@ Page({
     return `${month}-${day} ${hour}:${minute}`
   }
 })
+

@@ -1,3 +1,5 @@
+const { CUSTOMER_DONE_TEMPLATE_ID } = require('../../config/notify')
+
 Page({
   data: {
     orderId: '',
@@ -109,8 +111,35 @@ Page({
       confirmColor: '#1a1a1a',
       success: (res) => {
         if (res.confirm) {
-          this.submitPayment()
+          // 用户在「已支付」按钮的真实点击同步流程里弹订阅消息授权
+          // 微信要求必须在用户点击事件同步流程里调 requestSubscribeMessage
+          this.requestNotifyAndSubmit()
         }
+      }
+    })
+  },
+
+  // 在用户点击「已支付」按钮后同步触发订阅消息授权，然后继续提交
+  requestNotifyAndSubmit: function () {
+    if (!CUSTOMER_DONE_TEMPLATE_ID || CUSTOMER_DONE_TEMPLATE_ID === 'PENDING_APPLY') {
+      // 没配模板，直接提交
+      this.submitPayment()
+      return
+    }
+    wx.requestSubscribeMessage({
+      tmplIds: [CUSTOMER_DONE_TEMPLATE_ID],
+      success: (r) => {
+        console.log('订阅消息授权返回:', r)
+        if (r[CUSTOMER_DONE_TEMPLATE_ID] === 'accept') {
+          wx.setStorageSync('customerDoneNotifyEnabled', true)
+        }
+      },
+      fail: (err) => {
+        console.log('订阅消息授权失败（不影响支付）:', err)
+      },
+      complete: () => {
+        // 无论同意/拒绝都继续提交支付
+        this.submitPayment()
       }
     })
   },
