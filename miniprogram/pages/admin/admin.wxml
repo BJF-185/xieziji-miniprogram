@@ -8,7 +8,7 @@
         <view class="nav-btn back-btn" bindtap="goBack">
           <view class="back-arrow"></view>
         </view>
-        <view class="nav-btn notify-btn" bindtap="requestSubscribeMessage">
+        <view class="nav-btn notify-btn" bindtap="openOrderNotify">
           <view class="bell-icon">
             <view class="bell-body {{notifyEnabled ? 'bell-body-active' : ''}}"></view>
             <view class="bell-top {{notifyEnabled ? 'bell-top-active' : ''}}"></view>

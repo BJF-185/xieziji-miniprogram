@@ -76,6 +76,14 @@
       <view class="notify-arrow"></view>
     </view>
 
+    <!-- 长期订阅小提示：勾选"总是保持以上选择"可长期接收通知 -->
+    <view class="notify-tip" wx:if="{{notifyState !== 'accept'}}">
+      <text class="tip-icon">💡</text>
+      <text class="tip-text">弹窗中请勾选「</text>
+      <text class="tip-text tip-highlight">总是保持以上选择，不再询问</text>
+      <text class="tip-text">」，以后所有订单完成后都会自动通知您，无需再次授权。</text>
+    </view>
+
     <view class="bottom-spacing"></view>
   </view>
 

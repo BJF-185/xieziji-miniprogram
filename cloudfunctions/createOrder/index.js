@@ -7,7 +7,7 @@ const db = cloud.database()
 // 管理员密码（部署后请修改）
 const ADMIN_PASSWORD = '123123'
 
-// 订阅消息模板ID（顾客下单提醒）
+// 订阅消息模板ID（新订单提醒 - 管理员收）
 const ADMIN_NOTIFY_TEMPLATE_ID = 'SXc8H0R7GoG2q2xDJy8C2zCmUlJt_zew8VFYb9EVtA0'
 
 exports.main = async (event, context) => {
@@ -437,8 +437,9 @@ async function updateOrder(event, openid) {
 }
 
 /**
- * 发送管理员通知（订阅消息）
- * 顾客下单提醒模板字段映射（按微信公众平台模板详情，自定义编号）：
+ * 发送管理员通知（微信原生订阅消息）
+ * 关键：管理员需在 admin 页面勾选"总是保持以上选择"+允许，才能长期接收
+ * 模板字段映射（按微信公众平台模板详情）：
  * name7     - 联系人姓名
  * thing10   - 商品名称/文件名称
  * amount3   - 订单金额
@@ -456,7 +457,11 @@ async function sendAdminNotify(orderData) {
   const adminOpenid = admin.notifyOpenid || admin.openid
   console.log('找到管理员openid:', adminOpenid, '是否真实openid:', !!admin.notifyOpenid)
   if (!admin.notifyOpenid) {
-    console.warn('管理员 notifyOpenid 未设置，请登录 admin 页面完成 setupAdminNotify 一次')
+    console.warn('管理员 notifyOpenid 未设置，请在 admin 页面完成 setupAdminNotify 一次')
+  }
+
+  if (!adminOpenid || adminOpenid === 'webadmin') {
+    return { success: false, message: '管理员 openid 未设置，请先进入 admin 页面初始化' }
   }
 
   const now = new Date()
@@ -467,10 +472,10 @@ async function sendAdminNotify(orderData) {
     console.log('消息数据:', {
       name7: orderData.name,
       thing10: orderData.fileName.substring(0, 20),
-      amount3: '\u00a5' + orderData.price.toFixed(2),
+      amount3: '\u00a5' + Number(orderData.price || 0).toFixed(2),
       time36: timeStr
     })
-    
+
     const result = await cloud.openapi.subscribeMessage.send({
       touser: adminOpenid,
       templateId: ADMIN_NOTIFY_TEMPLATE_ID,
@@ -478,7 +483,7 @@ async function sendAdminNotify(orderData) {
       data: {
         name7: { value: orderData.name },
         thing10: { value: orderData.fileName.substring(0, 20) },
-        amount3: { value: '\u00a5' + orderData.price.toFixed(2) },
+        amount3: { value: '\u00a5' + Number(orderData.price || 0).toFixed(2) },
         time36: { value: timeStr }
       }
     })
@@ -486,6 +491,11 @@ async function sendAdminNotify(orderData) {
     return { success: true, message: '通知发送成功' }
   } catch (err) {
     console.error('发送订阅消息失败:', err)
-    return { success: false, message: '发送失败: ' + err.message, error: err }
+    // 43101 = 用户拒收（可能没勾选保持以上选择，或被微信限制）
+    return {
+      success: false,
+      message: '发送失败: ' + (err.errMsg || err.message),
+      errcode: err.errCode || (err.errMsg && err.errMsg.includes('43101') ? 43101 : null)
+    }
   }
 }

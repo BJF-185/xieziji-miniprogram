@@ -1,4 +1,4 @@
-﻿const cloud = require('wx-server-sdk')
+const cloud = require('wx-server-sdk')
 const { CUSTOMER_DONE_TEMPLATE_ID } = require('./notify')
 
 cloud.init({ env: 'cloud1-d3gd4qlyef136776e' })
@@ -119,7 +119,8 @@ async function sendCustomerDoneNotify(order) {
   const timeStr = `${now.getFullYear()}-${(String(now.getMonth() + 1)).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
 
   const thing1Value = (order.fileName || '订单').substring(0, 20)
-  const thing5Value = '已完成'
+  // 备注：固定取件信息（管理员取件地址）
+  const thing5Value = '书写完成，请到陕西楼413拿取。'
 
   try {
     const result = await cloud.openapi.subscribeMessage.send({

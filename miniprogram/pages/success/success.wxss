@@ -326,6 +326,33 @@
   flex-shrink: 0;
 }
 
+/* 长期订阅小提示 */
+.notify-tip {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 4rpx;
+  margin-top: 16rpx;
+  padding: 16rpx 20rpx;
+  background: #fff8e7;
+  border-radius: 12rpx;
+  border-left: 4rpx solid #c9a227;
+  line-height: 1.6;
+}
+.tip-icon {
+  font-size: 26rpx;
+  margin-right: 4rpx;
+  flex-shrink: 0;
+}
+.tip-text {
+  font-size: 24rpx;
+  color: #666666;
+}
+.tip-highlight {
+  color: #c9a227;
+  font-weight: 600;
+}
+
 .bottom-spacing {
   height: 40rpx;
 }

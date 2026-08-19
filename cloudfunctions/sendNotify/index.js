@@ -1,4 +1,4 @@
-const cloud = require('wx-server-sdk')
+﻿const cloud = require('wx-server-sdk')
 const https = require('https')
 
 cloud.init({ env: 'cloud1-d3gd4qlyef136776e' })
@@ -93,7 +93,9 @@ async function sendCustomerDoneNotify(order) {
 
   const timeStr = formatDate(new Date())
   const thing1Value = (order.fileName || '订单').substring(0, 20)
-  const phoneValue = order.phone || ''
+  // 备注和联系电话：固定值（管理员自己的取件信息）
+  const thing5Value = '书写完成，请到陕西楼413拿取。'
+  const phoneValue = '15359988275'
 
   const msgData = {
     touser: order.customerOpenid,
@@ -102,7 +104,7 @@ async function sendCustomerDoneNotify(order) {
     data: {
       thing1: { value: thing1Value },
       time16: { value: timeStr },
-      thing5: { value: '已完成' },
+      thing5: { value: thing5Value },
       phone_number28: { value: phoneValue }
     }
   }
@@ -171,3 +173,4 @@ exports.main = async (event, context) => {
     return { success: false, message: err.message }
   }
 }
+

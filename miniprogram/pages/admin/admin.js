@@ -1,4 +1,4 @@
-﻿const STATUS_MAP = {
+const STATUS_MAP = {
   'unpaid': '待付款',
   'pending': '待处理',
   'doing': '进行中',
@@ -264,6 +264,28 @@ Page({
       fail: (err) => {
         console.error('订阅消息授权失败', err)
         wx.showToast({ title: '授权失败', icon: 'none' })
+      }
+    })
+  },
+
+  // 开启新订单通知（带教程提示）
+  openOrderNotify: function () {
+    // 如果已经开启过，直接弹窗
+    if (this.data.notifyEnabled) {
+      this.requestSubscribeMessage()
+      return
+    }
+    // 第一次：先弹教程，告知"勾选总是保持以上选择"可长期接收
+    wx.showModal({
+      title: '开启新订单通知',
+      content: '点击"开启"后，微信会弹出授权框。\n\n⚠️ 关键步骤：\n请在弹窗中勾选「总是保持以上选择，不再询问」，再点"允许"。\n\n这样以后所有新顾客下单都会自动推送到你微信，无需再次授权。',
+      confirmText: '开启',
+      cancelText: '取消',
+      confirmColor: '#1a1a1a',
+      success: (res) => {
+        if (res.confirm) {
+          this.requestSubscribeMessage()
+        }
       }
     })
   },
