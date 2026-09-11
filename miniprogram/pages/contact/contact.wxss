@@ -1,0 +1,237 @@
+.page-container {
+  min-height: 100vh;
+  background-color: #f8f7f4;
+  position: relative;
+}
+
+.custom-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background-color: #f8f7f4;
+}
+
+.nav-placeholder {
+  width: 100%;
+}
+
+.navbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 88rpx;
+  padding: 0 24rpx;
+  position: relative;
+}
+
+.navbar-left, .navbar-right {
+  width: 80rpx;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.navbar-left {
+  padding-left: 8rpx;
+}
+
+.back-icon {
+  width: 22rpx;
+  height: 22rpx;
+  border-left: 4rpx solid #1a1a1a;
+  border-bottom: 4rpx solid #1a1a1a;
+  transform: rotate(45deg);
+}
+
+.navbar-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.navbar-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.3;
+}
+
+.content-area {
+  padding: 24rpx 32rpx;
+  padding-bottom: 200rpx;
+  margin-top: 20rpx;
+}
+
+.contact-card {
+  background-color: #ffffff;
+  border-radius: 24rpx;
+  padding: 48rpx 36rpx;
+  box-shadow: 0 2rpx 16rpx rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.contact-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+  line-height: 1.4;
+}
+
+.contact-desc {
+  font-size: 26rpx;
+  color: #999;
+  margin-top: 12rpx;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.qr-wrapper {
+  width: 100%;
+  margin-top: 40rpx;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+}
+
+.qr-image {
+  width: 70%;
+  border-radius: 12rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+}
+
+.qr-hint {
+  margin-top: 36rpx;
+  font-size: 24rpx;
+  color: #b0b0b0;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* === Tab栏容器（与首页/我的保持一致） === */
+.page-with-tabbar {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.tab-bar-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+.tab-bar-blur {
+  position: absolute;
+  top: -140rpx;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(248,247,244,0)      0%,
+    rgba(248,247,244,0)     10%,
+    rgba(248,247,244,0.08)  20%,
+    rgba(248,247,244,0.22)  30%,
+    rgba(248,247,244,0.42)  40%,
+    rgba(248,247,244,0.65)  50%,
+    rgba(248,247,244,0.85)  58%,
+    rgba(248,247,244,0.96)  65%,
+    rgba(248,247,244,1)     72%,
+    rgba(248,247,244,1)    100%
+  );
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent             0%,
+    transparent            10%,
+    rgba(0,0,0,0.08)       20%,
+    rgba(0,0,0,0.22)       30%,
+    rgba(0,0,0,0.42)       40%,
+    rgba(0,0,0,0.65)       50%,
+    rgba(0,0,0,0.85)       58%,
+    rgba(0,0,0,0.96)       65%,
+    black                  72%,
+    black                 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent             0%,
+    transparent            10%,
+    rgba(0,0,0,0.08)       20%,
+    rgba(0,0,0,0.22)       30%,
+    rgba(0,0,0,0.42)       40%,
+    rgba(0,0,0,0.65)       50%,
+    rgba(0,0,0,0.85)       58%,
+    rgba(0,0,0,0.96)       65%,
+    black                  72%,
+    black                 100%
+  );
+  pointer-events: none;
+}
+
+.tab-bar-icons {
+  position: relative;
+  display: flex;
+  padding: 12rpx 32rpx;
+  padding-bottom: calc(12rpx + env(safe-area-inset-bottom));
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12rpx 0;
+  transition: all 0.2s;
+  background: transparent;
+  border: none;
+  margin: 0;
+  width: auto;
+  height: auto;
+  line-height: normal;
+  font-size: inherit;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.tab-item::after {
+  border: none;
+}
+
+.tab-icon {
+  width: 52rpx;
+  height: 52rpx;
+  margin-bottom: 6rpx;
+  transition: opacity 0.2s;
+}
+
+.tab-label {
+  font-size: 24rpx;
+  color: #999999;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.tab-contact {
+  flex: 1;
+}
+
+.tab-item.active .tab-label {
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.tab-item.active .tab-icon {
+  opacity: 1;
+}

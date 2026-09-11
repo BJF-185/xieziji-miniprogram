@@ -17,13 +17,39 @@
         <image class="tab-icon" src="{{currentTab === 'home' ? '/images/tabbar/home-active.png' : '/images/tabbar/home.png'}}"/>
         <text class="tab-label">首页</text>
       </view>
-      <button class="tab-item tab-contact" open-type="contact">
+      <view class="tab-item tab-contact" bindtap="onGoContact">
         <image class="tab-icon" src="{{currentTab === 'chat' ? '/images/tabbar/chat-active.png' : '/images/tabbar/chat.png'}}"/>
         <text class="tab-label">咨询</text>
-      </button>
+      </view>
       <view class="tab-item {{currentTab === 'my' ? 'active' : ''}}" bindtap="onTabMy">
         <image class="tab-icon" src="{{currentTab === 'my' ? '/images/tabbar/user-active.png' : '/images/tabbar/user.png'}}"/>
         <text class="tab-label">我的</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 首次进入：完善头像昵称引导 -->
+  <view class="user-modal-mask" wx:if="{{showUserModal}}" catchtouchmove="preventScroll">
+    <view class="user-modal">
+      <view class="user-modal-title">完善您的资料</view>
+      <view class="user-modal-sub">设置头像和昵称，方便我们为您服务</view>
+
+      <button class="avatar-picker" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" loading="{{avatarUploading}}">
+        <image wx:if="{{avatarTempPath}}" class="avatar-preview" src="{{avatarTempPath}}" mode="aspectFill"></image>
+        <view wx:else class="avatar-placeholder">
+          <text class="avatar-plus">＋</text>
+          <text class="avatar-hint">选择头像</text>
+        </view>
+      </button>
+
+      <view class="nickname-input-wrap">
+        <text class="nickname-label">昵称</text>
+        <input class="nickname-input" type="nickname" placeholder="请输入昵称" value="{{nicknameDraft}}" bindinput="onNicknameInput" maxlength="20"/>
+      </view>
+
+      <view class="user-modal-btns">
+        <view class="btn-skip" bindtap="skipUserModal">暂不设置</view>
+        <view class="btn-save {{userInfoReady ? '' : 'disabled'}}" bindtap="saveUserInfo">保存</view>
       </view>
     </view>
   </view>

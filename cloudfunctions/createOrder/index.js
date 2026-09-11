@@ -279,7 +279,7 @@ function generateOrderNo() {
  * 确认支付
  */
 async function confirmPayment(event) {
-  const { orderId, paymentMethod, paymentNote } = event
+  const { orderId, paymentMethod, paymentNote, paymentProofFileID } = event
   
   if (!orderId) {
     return { success: false, message: '缺少订单ID' }
@@ -291,6 +291,7 @@ async function confirmPayment(event) {
         payStatus: 'paid',
         paymentMethod: paymentMethod || '',
         paymentNote: paymentNote || '',
+        paymentProofFileID: paymentProofFileID || '',
         paidTime: db.serverDate(),
         updateTime: db.serverDate()
       }
@@ -329,8 +330,8 @@ async function cancelOrder(event, openid) {
       return { success: false, message: '无权操作此订单' }
     }
 
-    const cancellableStatuses = ['unpaid', 'pending', 'paid']
-    if (!cancellableStatuses.includes(order.status) && !cancellableStatuses.includes(order.payStatus)) {
+    // 仅未付款订单可取消。付款后（payStatus !== 'unpaid'）订单已进入排队，不可取消
+    if (order.status !== 'unpaid' || order.payStatus !== 'unpaid') {
       return { success: false, message: '当前订单状态不支持取消' }
     }
 
@@ -426,7 +427,7 @@ async function updateOrder(event, openid) {
 
     const updated = (updateRes.stats && updateRes.stats.updated) || updateRes.updated || 0
     if (updated > 0) {
-      return { success: true, message: '订单已更新' }
+      return { success: true, message: '订单已更新', orderId: orderId, orderNo: order.orderNo }
     } else {
       return { success: false, message: '订单未更新，请重试' }
     }

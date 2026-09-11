@@ -11,8 +11,8 @@ const PAY_STATUS_ICON = {
 }
 
 const PAY_STATUS_DESC = {
-  'unpaid': '请完成支付以继续预约',
-  'paid': '您已提交支付，正在等待确认收款',
+  'unpaid': '请完成以继续',
+  'paid': '等待书写中',
   'confirmed': '支付已确认，订单正在排队处理中'
 }
 
@@ -33,10 +33,10 @@ const STATUS_ICON = {
 }
 
 const STATUS_DESC = {
-  'unpaid': '请完成支付以继续预约',
+  'unpaid': '请完成以继续',
   'pending': '您的预约正在排队等待处理',
   'doing': '您的预约正在书写中',
-  'done': '预约已完成，感谢您的使用',
+  'done': '已完成，感谢您的使用',
   'cancelled': '预约已取消'
 }
 
@@ -45,6 +45,17 @@ const PAY_STATUS_MAP = {
   'paid': '已支付待确认',
   'confirmed': '已确认'
 }
+
+// 字体列表（与下单页一致），用于展示已选字体的图片预览
+const FONT_LIST = [
+  { name: '楷书',     image: '/images/fonts/1.png' },
+  { name: '硬笔',     image: '/images/fonts/2.png' },
+  { name: '硬笔行书', image: '/images/fonts/3.png' },
+  { name: '行书',     image: '/images/fonts/4.png' },
+  { name: '行楷',     image: '/images/fonts/5.png' },
+  { name: '行草',     image: '/images/fonts/6.png' },
+  { name: '草书',     image: '/images/fonts/7.png' }
+]
 
 Page({
   data: {
@@ -57,7 +68,46 @@ Page({
     payStatusText: '',
     createTimeStr: '',
     statusBarHeight: 44,
-    navHeight: 132
+    navHeight: 132,
+    paymentProofUrl: '',
+    fontImgUrl: ''
+  },
+
+  // 解析转账截图 fileID 为可访问的临时 URL
+  resolvePaymentProof: function (fileID) {
+    if (!fileID) {
+      this.setData({ paymentProofUrl: '' })
+      return
+    }
+    wx.cloud.getTempFileURL({
+      fileList: [fileID],
+      success: (res) => {
+        const url = (res.fileList && res.fileList[0] && res.fileList[0].tempFileURL) || ''
+        this.setData({ paymentProofUrl: url })
+      },
+      fail: (err) => {
+        console.error('获取转账截图链接失败', err)
+      }
+    })
+  },
+
+  // 预览转账截图
+  previewPaymentProof: function () {
+    const url = this.data.paymentProofUrl
+    if (!url) {
+      wx.showToast({ title: '凭证加载中', icon: 'none' })
+      return
+    }
+    wx.previewImage({
+      urls: [url],
+      fail: () => {
+        wx.showToast({ title: '预览失败', icon: 'none' })
+      }
+    })
+  },
+
+  onProofError: function () {
+    console.warn('转账截图加载失败')
   },
 
   goBack: function () {
@@ -122,7 +172,10 @@ Page({
             statusDesc: statusDesc,
             payStatusText: PAY_STATUS_MAP[order.payStatus] || '',
             createTimeStr: this.formatTime(order.createTime),
+            fontImgUrl: this.getFontImage(order.fontName),
             loading: false
+          }, () => {
+            this.resolvePaymentProof(order.paymentProofFileID)
           })
         } else {
           wx.showToast({ title: result.message || '加载失败', icon: 'none' })
@@ -169,6 +222,10 @@ Page({
     const order = this.data.order
     // 未支付 → 编辑原订单；已取消 → 编辑并恢复为未支付
     wx.navigateTo({ url: `/pages/order/order?orderId=${order._id}` })
+  },
+
+  onGoContact: function () {
+    wx.navigateTo({ url: '/pages/contact/contact' })
   },
 
   cancelOrder: function () {
@@ -220,6 +277,13 @@ Page({
         })
       }
     })
+  },
+
+  // 根据字体名称反查预览图片
+  getFontImage: function (fontName) {
+    if (!fontName) return ''
+    const font = FONT_LIST.find(f => f.name === fontName)
+    return font ? font.image : ''
   },
 
   makeCall: function () {

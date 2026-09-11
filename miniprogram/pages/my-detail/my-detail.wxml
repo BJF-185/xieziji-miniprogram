@@ -20,9 +20,37 @@
 
     <view class="info-card">
       <view class="info-row">
-        <text class="info-label">文件名</text>
-        <text class="info-value file-name">{{order.fileName}}</text>
+        <text class="info-label">姓名</text>
+        <text class="info-value">{{order.name}}</text>
       </view>
+      <view class="info-row">
+        <text class="info-label">手机号</text>
+        <text class="info-value phone-link" bindtap="makeCall">{{order.phone}}</text>
+      </view>
+      <view class="info-row" wx:if="{{order.notebookSize}}">
+        <text class="info-label">书写纸张</text>
+        <text class="info-value">{{order.notebookSize}}</text>
+      </view>
+      <view class="info-row" wx:if="{{order.pageCount}}">
+        <text class="info-label">写几页</text>
+        <text class="info-value">{{order.pageCount}} 页</text>
+      </view>
+      <view class="info-row" wx:if="{{order.dormNo}}">
+        <text class="info-label">宿舍楼</text>
+        <text class="info-value">{{order.dormNo}}</text>
+      </view>
+      <view class="info-row" wx:if="{{order.remark}}">
+        <text class="info-label">备注</text>
+        <text class="info-value remark-text">{{order.remark}}</text>
+      </view>
+    </view>
+
+    <view class="info-card">
+      <view class="info-row" wx:if="{{order.fontName}}">
+        <text class="info-label">字体</text>
+        <text class="info-value">{{order.fontName}}</text>
+      </view>
+      <image wx:if="{{fontImgUrl}}" class="font-preview-img" src="{{fontImgUrl}}" mode="widthFix"></image>
       <view class="info-row" wx:if="{{order.wordCount}}">
         <text class="info-label">字数</text>
         <text class="info-value">{{order.wordCount}} 字</text>
@@ -53,30 +81,15 @@
       </view>
     </view>
 
-    <view class="info-card">
-      <view class="info-row">
-        <text class="info-label">姓名</text>
-        <text class="info-value">{{order.name}}</text>
-      </view>
-      <view class="info-row">
-        <text class="info-label">手机号</text>
-        <text class="info-value phone-link" bindtap="makeCall">{{order.phone}}</text>
-      </view>
-      <view class="info-row" wx:if="{{order.notebookSize}}">
-        <text class="info-label">本子类型</text>
-        <text class="info-value">{{order.notebookSize}}</text>
-      </view>
-      <view class="info-row" wx:if="{{order.pageCount}}">
-        <text class="info-label">写几页</text>
-        <text class="info-value">{{order.pageCount}} 页</text>
-      </view>
-      <view class="info-row" wx:if="{{order.dormNo}}">
-        <text class="info-label">宿舍楼</text>
-        <text class="info-value">{{order.dormNo}}</text>
-      </view>
-      <view class="info-row" wx:if="{{order.remark}}">
-        <text class="info-label">备注</text>
-        <text class="info-value remark-text">{{order.remark}}</text>
+    <!-- 转账凭证卡（仅在有凭证时显示） -->
+    <view class="info-card" wx:if="{{order.paymentProofFileID}}">
+      <view class="proof-section">
+        <view class="proof-header">
+          <text class="proof-title">转账凭证</text>
+          <text class="proof-sub">您提交的转账截图</text>
+        </view>
+        <image class="proof-image" src="{{paymentProofUrl}}" mode="widthFix" bindtap="previewPaymentProof" binderror="onProofError"></image>
+        <view class="proof-tip">点击图片可放大预览</view>
       </view>
     </view>
 
@@ -88,12 +101,12 @@
       <view class="btn-primary" bindtap="goPayment">立即支付</view>
     </block>
     <block wx:if="{{order.payStatus === 'unpaid' || order.status === 'cancelled'}}">
-      <view class="btn-outline" bindtap="goReorder">重新下单</view>
+      <view class="btn-outline" bindtap="goReorder">修改订单</view>
     </block>
-    <block wx:if="{{order.status !== 'cancelled' && order.status !== 'doing' && order.status !== 'done'}}">
+    <block wx:if="{{order.payStatus === 'unpaid' && order.status === 'unpaid'}}">
       <view class="btn-outline" bindtap="cancelOrder">取消订单</view>
     </block>
-    <button class="btn-contact" open-type="contact">联系我</button>
+    <view class="btn-contact" bindtap="onGoContact">咨询</view>
   </view>
 </view>
 

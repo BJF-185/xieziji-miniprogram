@@ -1,0 +1,46 @@
+<view class="page-container {{!canGoBack ? 'page-with-tabbar' : ''}}">
+  <view class="custom-navbar">
+    <view class="nav-placeholder" style="height: {{statusBarHeight}}px;"></view>
+    <view class="navbar-content">
+      <view class="navbar-left" bindtap="goBack" wx:if="{{canGoBack}}">
+        <view class="back-icon"></view>
+      </view>
+      <view class="navbar-left" wx:else></view>
+      <view class="navbar-center">
+        <text class="navbar-title">咨询</text>
+      </view>
+      <view class="navbar-right"></view>
+    </view>
+  </view>
+
+  <view class="content-area" style="padding-top: {{navTotalHeight}}px;">
+    <view class="contact-card">
+      <text class="contact-title">扫码加好友，直接咨询</text>
+      <text class="contact-desc">长按识别下方二维码，添加我为微信好友</text>
+
+      <view class="qr-wrapper">
+        <image class="qr-image" src="{{qrUrl}}" mode="widthFix" binderror="onQrError" show-menu-by-longpress="true"></image>
+      </view>
+
+      <text class="qr-hint">长按二维码，弹出"识别图中二维码"后添加</text>
+    </view>
+  </view>
+
+  <view class="tab-bar-container" wx:if="{{!canGoBack}}">
+    <view class="tab-bar-blur"></view>
+    <view class="tab-bar-icons">
+      <view class="tab-item {{currentTab === 'home' ? 'active' : ''}}" bindtap="onTabHome">
+        <image class="tab-icon" src="{{currentTab === 'home' ? '/images/tabbar/home-active.png' : '/images/tabbar/home.png'}}"/>
+        <text class="tab-label">首页</text>
+      </view>
+      <view class="tab-item tab-contact {{currentTab === 'chat' ? 'active' : ''}}" bindtap="onGoContact">
+        <image class="tab-icon" src="{{currentTab === 'chat' ? '/images/tabbar/chat-active.png' : '/images/tabbar/chat.png'}}"/>
+        <text class="tab-label">咨询</text>
+      </view>
+      <view class="tab-item {{currentTab === 'my' ? 'active' : ''}}" bindtap="onTabMy">
+        <image class="tab-icon" src="{{currentTab === 'my' ? '/images/tabbar/user-active.png' : '/images/tabbar/user.png'}}"/>
+        <text class="tab-label">我的</text>
+      </view>
+    </view>
+  </view>
+</view>

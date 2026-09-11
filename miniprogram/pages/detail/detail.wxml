@@ -69,7 +69,7 @@
         <text class="info-value phone-link" bindtap="makeCall">{{order.phone}}</text>
       </view>
       <view class="info-row" wx:if="{{order.notebookSize}}">
-        <text class="info-label">本子类型</text>
+        <text class="info-label">书写纸张</text>
         <text class="info-value">{{order.notebookSize}}</text>
       </view>
       <view class="info-row" wx:if="{{order.pageCount}}">
@@ -87,6 +87,18 @@
       <view class="info-row" wx:if="{{order.remark}}">
         <text class="info-label">备注</text>
         <text class="info-value remark-text">{{order.remark}}</text>
+      </view>
+    </view>
+
+    <!-- 转账凭证卡（仅在有凭证时显示） -->
+    <view class="info-card" wx:if="{{order.paymentProofFileID}}">
+      <view class="proof-section">
+        <view class="proof-header">
+          <text class="proof-title">转账凭证</text>
+          <text class="proof-sub">客户提交的转账截图</text>
+        </view>
+        <image class="proof-image" src="{{paymentProofUrl}}" mode="widthFix" bindtap="previewPaymentProof" binderror="onProofError"></image>
+        <view class="proof-tip">点击图片可放大预览</view>
       </view>
     </view>
 

@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=10">
+    <link rel="stylesheet" href="style.css?v=35">
 </head>
 <body>
     <!-- 侧边栏 -->
@@ -27,6 +27,18 @@
         </div>
 
         <nav class="sidebar-menu">
+            <div class="menu-item" data-menu="workbench" onclick="switchMenu('workbench')">
+                <span class="menu-icon menu-icon-workbench">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="9" rx="1.5"/>
+                        <rect x="14" y="3" width="7" height="5" rx="1.5"/>
+                        <rect x="14" y="12" width="7" height="9" rx="1.5"/>
+                        <rect x="3" y="16" width="7" height="5" rx="1.5"/>
+                    </svg>
+                </span>
+                <span class="menu-label">工作台</span>
+                <span class="menu-badge" id="workbenchBadge" style="display:none;">0</span>
+            </div>
             <div class="menu-item active" data-menu="home" onclick="switchMenu('home')">
                 <span class="menu-icon menu-icon-home">
                     <span class="mi-house"></span>
@@ -125,10 +137,17 @@
                 <table class="orders-table" id="ordersTable">
                     <thead>
                         <tr>
+                            <th class="col-check">
+                                <label class="checkbox-wrap">
+                                    <input type="checkbox" id="checkAll" onchange="toggleSelectAll(this.checked)">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </th>
                             <th>时间</th>
                             <th>客户</th>
                             <th>文件</th>
                             <th>金额</th>
+                            <th>截图</th>
                             <th>状态</th>
                             <th>操作</th>
                         </tr>
@@ -149,7 +168,83 @@
             <!-- 分页 -->
             <div class="pagination-bar" id="paginationBar"></div>
         </div>
+
+        <!-- 工作台视图 -->
+        <div class="workbench-view" id="workbenchView" style="display:none;">
+            <!-- 顶栏 -->
+            <div class="workbench-topbar">
+                <div class="workbench-title-wrap">
+                    <h2 class="workbench-title">工作台</h2>
+                    <span class="workbench-sub">逐个快速处理待办订单</span>
+                </div>
+                <div class="workbench-progress" id="wbProgress"></div>
+                <button class="btn btn-default" onclick="switchMenu('home')">返回订单管理</button>
+            </div>
+
+            <!-- 队列筛选 -->
+            <div class="wb-filter" id="wbFilter">
+                <button class="wb-filter-btn active" data-wf="confirm" onclick="wbSetFilter('confirm')">待确认<span class="wb-filter-count" id="wfCountConfirm">0</span></button>
+                <button class="wb-filter-btn" data-wf="pending" onclick="wbSetFilter('pending')">待处理<span class="wb-filter-count" id="wfCountPending">0</span></button>
+                <button class="wb-filter-btn" data-wf="doing" onclick="wbSetFilter('doing')">书写中<span class="wb-filter-count" id="wfCountDoing">0</span></button>
+            </div>
+
+            <!-- 主体：三栏（左侧待办列表 | 中间订单信息+操作 | 右侧转账截图） -->
+            <div class="workbench-main">
+                <!-- 左侧：待办队列 -->
+                <div class="wb-queue-card">
+                    <div class="wb-card-title-row">
+                        <span class="wb-card-title">待办列表</span>
+                    </div>
+                    <div class="wb-queue-bar" id="wbQueueBar"></div>
+                </div>
+
+                <!-- 中间：订单信息 + 操作 -->
+                <div class="workbench-side">
+                    <div class="wb-card wb-info-card">
+                        <div class="wb-card-title">订单信息</div>
+                        <div class="wb-info-rows" id="wbInfoRows"></div>
+                        <div class="wb-file" id="wbFile" style="display:none;"></div>
+                    </div>
+                    <div class="wb-card wb-actions-card">
+                        <div class="wb-actions">
+                            <button class="btn btn-primary wb-main-btn" id="wbMainBtn" onclick="wbMainAction()">确认收款</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右侧：内嵌大图（按图片比例伸缩窗口） -->
+                <div class="wb-card wb-proof-card">
+                    <div class="wb-card-title">转账截图</div>
+                    <div class="wb-proof-body">
+                        <img id="wbProofImg" class="wb-proof-img" onclick="previewPaymentProof(this)" alt="转账截图" style="display:none;"/>
+                        <div id="wbProofEmpty" class="wb-proof-empty" style="display:none;">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            <p>该订单未上传转账截图</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
+
+    <!-- 批量操作栏 -->
+    <div class="bulk-bar" id="bulkBar">
+        <div class="bulk-info">
+            <span class="bulk-selected" id="bulkSelectedCount">已选 0 项</span>
+            <button class="bulk-clear" onclick="clearSelection()">取消选择</button>
+        </div>
+        <div class="bulk-actions">
+            <select class="bulk-status-select" id="bulkStatusSelect" onchange="if(this.value) bulkChangeStatus()">
+                <option value="">批量修改状态</option>
+                <option value="pending">设为待处理</option>
+                <option value="doing">设为进行中</option>
+                <option value="done">设为已完成</option>
+                <option value="cancelled">设为已取消</option>
+            </select>
+            <button class="bulk-btn bulk-btn-paid" onclick="bulkConfirmPayment()">批量确认收款</button>
+            <button class="bulk-btn bulk-btn-danger" onclick="bulkDelete()">批量删除</button>
+        </div>
+    </div>
 
     <!-- Mobile menu FAB -->
     <button class="mobile-menu-btn" onclick="toggleSidebar()">
@@ -192,6 +287,6 @@
     <!-- Toast -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <script src="app.js?v=10"></script>
+    <script src="app.js?v=38"></script>
 </body>
 </html>

@@ -121,8 +121,8 @@
 
   <view class="bottom-bar">
     <button class="submit-btn {{canSubmit ? '' : 'btn-disabled'}}" bindtap="submitOrder" disabled="{{!canSubmit || submitting}}">
-      {{submitting ? (isEdit ? '更新中...' : '提交中...') : (canSubmit ? (isEdit ? '更新订单' : '提交') : '请完善信息')}}
+      {{submitting ? '提交中...' : (canSubmit ? '提交' : '请完善信息')}}
     </button>
-    <text wx:if="{{canSubmit}}" class="submit-tip">{{isEdit ? '更新后请重新进入支付页继续支付' : '提交后请完成支付，我们会尽快为您处理'}}</text>
+    <text wx:if="{{canSubmit}}" class="submit-tip">提交后请完成支付，我们会尽快为您处理</text>
   </view>
 </view>

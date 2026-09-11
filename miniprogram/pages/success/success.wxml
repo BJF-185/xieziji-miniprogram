@@ -6,7 +6,7 @@
         <view class="back-icon"></view>
       </view>
       <view class="navbar-center">
-        <text class="navbar-title">支付成功</text>
+        <text class="navbar-title">提交成功</text>
       </view>
       <view class="navbar-right"></view>
     </view>
@@ -19,8 +19,8 @@
           <view class="success-check"></view>
         </view>
       </view>
-      <text class="success-title">支付已提交</text>
-      <text class="success-desc">等待管理员确认收款后开始处理</text>
+      <text class="success-title">申请已提交</text>
+      <text class="success-desc">请耐心等待，管理员将尽快为您处理</text>
 
       <view class="info-section">
         <view class="info-row">
@@ -28,8 +28,8 @@
           <text class="info-value">{{wordCount}} 字</text>
         </view>
         <view class="info-row">
-          <text class="info-label">支付状态</text>
-          <text class="info-value status-paid">已提交转账</text>
+          <text class="info-label">当前状态</text>
+          <text class="info-value status-paid">等待处理</text>
         </view>
       </view>
     </view>
@@ -40,8 +40,8 @@
       <view class="step-item">
         <view class="step-circle">1</view>
         <view class="step-body">
-          <text class="step-text">等待管理员确认收款</text>
-          <text class="step-subtext">确认后订单将自动进入处理队列</text>
+          <text class="step-text">等待管理员处理</text>
+          <text class="step-subtext">处理完成后将通过"服务通知"提醒您</text>
         </view>
       </view>
 

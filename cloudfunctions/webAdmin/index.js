@@ -16,7 +16,7 @@ exports.main = async (event, context) => {
   const params = event.body ? JSON.parse(event.body) : event
   console.log('解析后 params:', JSON.stringify(params).substring(0, 500))
 
-  const { action, token, orderId, status, password, fileID } = params
+  const { action, token, orderId, status, password, fileID, orderIds } = params
 
   if (action === 'login') {
     console.log('【login】调用')
@@ -30,7 +30,8 @@ exports.main = async (event, context) => {
     return { success: false, message: '未登录或登录已过期' }
   }
 
-  if (!orderId && action !== 'getOrders' && action !== 'downloadFile') {
+  const BATCH_ACTIONS = ['batchUpdateStatus', 'batchConfirmPayment', 'batchDelete']
+  if (!orderId && action !== 'getOrders' && action !== 'downloadFile' && !BATCH_ACTIONS.includes(action)) {
     return { success: false, message: '缺少订单ID' }
   }
 
@@ -55,6 +56,18 @@ exports.main = async (event, context) => {
     case 'deleteOrder':
       console.log('【deleteOrder】orderId:', orderId)
       result = await deleteOrder(orderId)
+      break
+    case 'batchUpdateStatus':
+      console.log('【batchUpdateStatus】orderIds:', (orderIds || []).length, 'status:', status)
+      result = await batchUpdateStatus(orderIds, status)
+      break
+    case 'batchConfirmPayment':
+      console.log('【batchConfirmPayment】orderIds:', (orderIds || []).length)
+      result = await batchConfirmPayment(orderIds)
+      break
+    case 'batchDelete':
+      console.log('【batchDelete】orderIds:', (orderIds || []).length)
+      result = await batchDelete(orderIds)
       break
     case 'downloadFile':
       console.log('【downloadFile】fileID:', fileID || orderId)
@@ -115,9 +128,10 @@ async function getOrderList() {
       .orderBy('createTime', 'desc')
       .limit(100)
       .get()
+    const orders = await enrichUsers(listRes.data)
     return {
       success: true,
-      orders: listRes.data,
+      orders: orders,
       totalCount: totalCount.total
     }
   } catch (err) {
@@ -125,11 +139,57 @@ async function getOrderList() {
   }
 }
 
+// ===== 批量关联用户资料（头像/昵称/手机号）=====
+async function enrichUsers(orders) {
+  if (!orders || orders.length === 0) return orders
+  // 收集所有客户 openid
+  const openidSet = new Set()
+  orders.forEach(o => { if (o.customerOpenid) openidSet.add(o.customerOpenid) })
+  const openids = Array.from(openidSet)
+  if (openids.length === 0) return orders
+
+  // 查询 users 集合
+  const userMap = {}
+  try {
+    const userRes = await db.collection('users').where({ openid: db.command.in(openids) }).get()
+    userRes.data.forEach(u => { userMap[u.openid] = u })
+  } catch (err) {
+    console.error('查询用户资料失败', err)
+  }
+
+  // 为每个订单附加用户信息
+  orders.forEach(o => {
+    const u = userMap[o.customerOpenid]
+    o.userNickname = u ? u.nickname : ''
+    o.userAvatarFileID = u ? u.avatarFileID : ''
+  })
+
+  // 批量把头像 fileID 转成下载 URL
+  const fileIDs = orders.map(o => o.userAvatarFileID).filter(Boolean)
+  // 同时收集转账截图 fileID，转成临时 URL 供人工核对
+  orders.forEach(o => { if (o.paymentProofFileID) fileIDs.push(o.paymentProofFileID) })
+  const urlMap = {}
+  if (fileIDs.length > 0) {
+    try {
+      const urlRes = await cloud.getTempFileURL({ fileList: fileIDs })
+      urlRes.fileList.forEach(item => { urlMap[item.fileID] = item.tempFileURL })
+    } catch (err) {
+      console.error('获取头像URL失败', err)
+    }
+  }
+  orders.forEach(o => { o.userAvatar = o.userAvatarFileID ? urlMap[o.userAvatarFileID] || '' : '' })
+  orders.forEach(o => { o.paymentProofUrl = o.paymentProofFileID ? urlMap[o.paymentProofFileID] || '' : '' })
+
+  return orders
+}
+
 // ===== 订单详情 =====
 async function getOrderDetail(orderId) {
   try {
     const res = await db.collection('orders').doc(orderId).get()
-    return { success: true, order: res.data }
+    const order = res.data
+    const enriched = await enrichUsers([order])
+    return { success: true, order: enriched[0] }
   } catch (err) {
     return { success: false, message: '订单不存在' }
   }
@@ -194,13 +254,130 @@ async function confirmPayment(orderId) {
 // ===== 删除订单 =====
 async function deleteOrder(orderId) {
   try {
+    // 先取出订单（含文件ID），用于删除云存储文件
+    let order = null
+    try {
+      const res = await db.collection('orders').doc(orderId).get()
+      order = res.data
+    } catch (e) {
+      // 订单可能不存在，忽略
+    }
     const deleteRes = await db.collection('orders').doc(orderId).remove()
     if (deleteRes.deleted === 0) {
       return { success: false, message: '订单不存在或未删除' }
     }
+    await cleanupOrderFiles(order)
     return { success: true, message: '删除成功' }
   } catch (err) {
     return { success: false, message: '删除失败: ' + err.message }
+  }
+}
+
+// ===== 删除订单关联的云存储文件（文档 + 转账截图）=====
+async function cleanupOrderFiles(order) {
+  if (!order) return
+  const fileIDs = []
+  if (order.fileID) fileIDs.push(order.fileID)
+  if (order.paymentProofFileID) fileIDs.push(order.paymentProofFileID)
+  if (fileIDs.length === 0) return
+  try {
+    await cloud.deleteFile({ fileList: fileIDs })
+  } catch (err) {
+    console.warn('删除订单云存储文件失败（不影响数据库删除）', err)
+  }
+}
+
+// ===== 批量更新状态 =====
+async function batchUpdateStatus(orderIds, status) {
+  if (!Array.isArray(orderIds) || orderIds.length === 0) {
+    return { success: false, message: '请选择要更新的订单' }
+  }
+  if (!VALID_STATUSES.includes(status)) {
+    return { success: false, message: '无效的订单状态' }
+  }
+  try {
+    let successCount = 0
+    const failed = []
+    // 云函数端循环逐条更新（doc.update 不支持批量 where）
+    for (const id of orderIds) {
+      const updateRes = await db.collection('orders').doc(id).update({
+        data: { status: status, updateTime: db.serverDate() }
+      })
+      if (updateRes.updated > 0) successCount++
+      else failed.push(id)
+    }
+    // 若批量改为 done，为每个成功订单发通知
+    if (status === 'done' && successCount > 0) {
+      for (const id of orderIds.filter(oid => !failed.includes(oid))) {
+        try {
+          await cloud.callFunction({ name: 'sendNotify', data: { orderId: id, type: 'done' } })
+        } catch (e) {
+          console.log('批量通知失败 orderId:', id, JSON.stringify(e))
+        }
+      }
+    }
+    return { success: true, message: `成功${successCount}单，失败${failed.length}单` }
+  } catch (err) {
+    console.error('批量更新失败:', err)
+    return { success: false, message: '批量更新失败: ' + err.message }
+  }
+}
+
+// ===== 批量确认收款 =====
+async function batchConfirmPayment(orderIds) {
+  if (!Array.isArray(orderIds) || orderIds.length === 0) {
+    return { success: false, message: '请选择要确认的订单' }
+  }
+  try {
+    let successCount = 0
+    const failed = []
+    for (const id of orderIds) {
+      const updateRes = await db.collection('orders').doc(id).update({
+        data: {
+          payStatus: 'confirmed',
+          status: 'pending',
+          updateTime: db.serverDate()
+        }
+      })
+      if (updateRes.updated > 0) successCount++
+      else failed.push(id)
+    }
+    return { success: true, message: `确认成功${successCount}单，失败${failed.length}单` }
+  } catch (err) {
+    console.error('批量确认收款失败:', err)
+    return { success: false, message: '批量确认失败: ' + err.message }
+  }
+}
+
+// ===== 批量删除 =====
+async function batchDelete(orderIds) {
+  if (!Array.isArray(orderIds) || orderIds.length === 0) {
+    return { success: false, message: '请选择要删除的订单' }
+  }
+  try {
+    let successCount = 0
+    const failed = []
+    for (const id of orderIds) {
+      // 先取出订单（含文件ID）
+      let order = null
+      try {
+        const res = await db.collection('orders').doc(id).get()
+        order = res.data
+      } catch (e) {
+        // 订单可能不存在
+      }
+      const deleteRes = await db.collection('orders').doc(id).remove()
+      if (deleteRes.deleted > 0) {
+        successCount++
+        await cleanupOrderFiles(order)
+      } else {
+        failed.push(id)
+      }
+    }
+    return { success: true, message: `删除成功${successCount}单，失败${failed.length}单` }
+  } catch (err) {
+    console.error('批量删除失败:', err)
+    return { success: false, message: '批量删除失败: ' + err.message }
   }
 }
 
@@ -210,6 +387,12 @@ async function downloadFile(fileID) {
     return { success: false, message: '缺少文件ID' }
   }
   try {
+    // 优先用临时 URL 方式（保留原文件名/MIME，浏览器可直接打开/下载）
+    const urlRes = await cloud.getTempFileURL({ fileList: [fileID] })
+    if (urlRes.fileList && urlRes.fileList[0] && urlRes.fileList[0].tempFileURL) {
+      return { success: true, downloadUrl: urlRes.fileList[0].tempFileURL }
+    }
+    // 兜底：走 base64
     const downloadRes = await cloud.downloadFile({ fileID: fileID })
     const fileContent = downloadRes.fileContent
     const fileBase64 = fileContent.toString('base64')

@@ -1,5 +1,4 @@
 const cloud = require('wx-server-sdk')
-const { CUSTOMER_DONE_TEMPLATE_ID } = require('./notify')
 
 cloud.init({ env: 'cloud1-d3gd4qlyef136776e' })
 const db = cloud.database()
@@ -46,13 +45,15 @@ exports.main = async (event, context) => {
     }
 
     if (status === 'done') {
+      // 改用 sendNotify 云函数走 https 直调微信接口（避免 cloud.openapi.subscribeMessage.send 在 HTTP 触发器下 -501001）
       try {
-        const orderRes = await db.collection('orders').doc(orderId).get()
-        if (orderRes.data) {
-          await sendCustomerDoneNotify(orderRes.data)
-        }
+        await cloud.callFunction({
+          name: 'sendNotify',
+          data: { orderId, type: 'done' }
+        })
+        console.log('完成通知已派发到 sendNotify')
       } catch (notifyErr) {
-        console.warn('发送完成通知异常（不影响主流程）:', notifyErr)
+        console.warn('派发完成通知失败（不影响主流程）:', notifyErr.message)
       }
     }
 
@@ -101,43 +102,5 @@ async function isAdminOpenid(openid) {
     return res.total > 0
   } catch (err) {
     return false
-  }
-}
-
-async function sendCustomerDoneNotify(order) {
-  if (!order || !order.customerOpenid) {
-    console.warn('订单缺少 customerOpenid，跳过通知')
-    return { success: false, message: '缺少用户 openid' }
-  }
-
-  if (!CUSTOMER_DONE_TEMPLATE_ID || CUSTOMER_DONE_TEMPLATE_ID === 'PENDING_APPLY') {
-    console.warn('CUSTOMER_DONE_TEMPLATE_ID 未配置，跳过通知')
-    return { success: false, message: '模板 ID 未配置' }
-  }
-
-  const now = new Date()
-  const timeStr = `${now.getFullYear()}-${(String(now.getMonth() + 1)).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-
-  const thing1Value = (order.fileName || '订单').substring(0, 20)
-  // 备注：固定取件信息（管理员取件地址）
-  const thing5Value = '书写完成，请到陕西楼413拿取。'
-
-  try {
-    const result = await cloud.openapi.subscribeMessage.send({
-      touser: order.customerOpenid,
-      templateId: CUSTOMER_DONE_TEMPLATE_ID,
-      page: `pages/my-detail/my-detail?id=${order._id}`,
-      data: {
-        thing1: { value: thing1Value },
-        time16: { value: timeStr },
-        thing5: { value: thing5Value },
-        phone_number28: { value: '15359988275' }
-      }
-    })
-    console.log('完成通知发送成功:', result)
-    return { success: true }
-  } catch (err) {
-    console.warn('完成通知发送失败（不影响主流程）:', err.errCode, err.errMsg)
-    return { success: false, message: err.errMsg }
   }
 }

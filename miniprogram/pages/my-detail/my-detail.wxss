@@ -2,6 +2,7 @@
   min-height: 100vh;
   background-color: #f8f7f4;
   position: relative;
+  overflow-x: hidden;
 }
 
 .custom-navbar {
@@ -62,7 +63,7 @@
 
 .content-area {
   padding: 24rpx 32rpx;
-  padding-bottom: 240rpx;
+  padding-bottom: 200rpx;
 }
 
 .status-card {
@@ -74,36 +75,76 @@
 }
 
 .status-card.status-unpaid {
-  background-color: #F59E0B;
+  background-color: #FEF3C7;
+}
+
+.status-card.status-unpaid .status-main-text {
+  color: #B45309;
+}
+
+.status-card.status-unpaid .status-sub-text {
+  color: rgba(180, 83, 9, 0.6);
 }
 
 .status-card.status-pending {
-  background-color: #3B82F6;
+  background-color: #DBEAFE;
+}
+
+.status-card.status-pending .status-main-text {
+  color: #2563EB;
+}
+
+.status-card.status-pending .status-sub-text {
+  color: rgba(37, 99, 235, 0.6);
 }
 
 .status-card.status-doing {
-  background-color: #8B5CF6;
+  background-color: #EDE9FE;
+}
+
+.status-card.status-doing .status-main-text {
+  color: #7C3AED;
+}
+
+.status-card.status-doing .status-sub-text {
+  color: rgba(124, 58, 237, 0.6);
 }
 
 .status-card.status-done {
-  background-color: #22C55E;
+  background-color: #DCFCE7;
+}
+
+.status-card.status-done .status-main-text {
+  color: #16A34A;
+}
+
+.status-card.status-done .status-sub-text {
+  color: rgba(22, 163, 74, 0.6);
 }
 
 .status-card.status-cancelled {
-  background-color: #9CA3AF;
+  background-color: #F3F4F6;
+}
+
+.status-card.status-cancelled .status-main-text {
+  color: #6B7280;
+}
+
+.status-card.status-cancelled .status-sub-text {
+  color: rgba(107, 114, 128, 0.6);
 }
 
 .status-main-text {
   font-size: 32rpx;
   font-weight: 600;
-  color: #ffffff;
+  color: #1a1a1a;
   display: block;
   margin-bottom: 10rpx;
 }
 
 .status-sub-text {
   font-size: 26rpx;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(26, 26, 26, 0.6);
   line-height: 1.5;
   display: block;
 }
@@ -114,6 +155,14 @@
   padding: 8rpx 36rpx;
   margin-bottom: 24rpx;
   box-shadow: 0 2rpx 16rpx rgba(0, 0, 0, 0.04);
+}
+
+/* 已选字体预览图（与下单页一致） */
+.font-preview-img {
+  width: 100%;
+  border-radius: 16rpx;
+  margin: 8rpx 0 24rpx;
+  background-color: #f5f5f5;
 }
 
 .info-row {
@@ -241,42 +290,44 @@
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 20rpx 32rpx;
-  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  padding: 16rpx 32rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
   background-color: #f8f7f4;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 16rpx;
 }
 
+/* 主操作按钮（配色与其他按钮一致） */
 .btn-primary {
-  width: 100%;
-  height: 96rpx;
-  line-height: 96rpx;
-  background: #1a1a1a;
-  color: #ffffff;
-  font-size: 32rpx;
-  font-weight: 600;
-  border-radius: 48rpx;
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-size: 30rpx;
+  font-weight: 500;
+  border-radius: 44rpx;
   text-align: center;
+  border: 2rpx solid #e5e5e5;
   letter-spacing: 2rpx;
 }
 
 .btn-primary:active {
-  background: #333333;
-  opacity: 0.9;
+  background: #f5f5f5;
   transform: scale(0.98);
 }
 
+/* 次要操作按钮等宽 */
 .btn-outline {
-  width: 100%;
-  height: 96rpx;
-  line-height: 96rpx;
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
   background: #ffffff;
   color: #1a1a1a;
-  font-size: 32rpx;
+  font-size: 30rpx;
   font-weight: 500;
-  border-radius: 48rpx;
+  border-radius: 44rpx;
   text-align: center;
   border: 2rpx solid #e5e5e5;
   letter-spacing: 2rpx;
@@ -287,29 +338,65 @@
   transform: scale(0.98);
 }
 
+/* 咨询按钮等宽、弱化 */
 .btn-contact {
-  width: 100%;
-  height: 96rpx;
-  line-height: 96rpx;
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
   background: #ffffff;
   color: #1a1a1a;
-  font-size: 30rpx;
+  font-size: 28rpx;
   font-weight: 500;
-  border-radius: 48rpx;
+  border-radius: 44rpx;
   text-align: center;
-  border: none;
+  border: 2rpx solid #e5e5e5;
   letter-spacing: 2rpx;
   margin: 0;
   padding: 0;
 }
 
-.btn-contact::after {
-  border: none;
-}
-
 .btn-contact:active {
   background: #f5f5f5;
   opacity: 0.9;
+}
+
+/* 转账凭证卡 */
+.proof-section {
+  padding: 20rpx 0 8rpx;
+}
+
+.proof-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+  padding: 0 4rpx;
+}
+
+.proof-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.proof-sub {
+  font-size: 22rpx;
+  color: #b0b0b0;
+}
+
+.proof-image {
+  width: 100%;
+  border-radius: 16rpx;
+  display: block;
+  background-color: #f5f5f5;
+  min-height: 200rpx;
+}
+
+.proof-tip {
+  font-size: 22rpx;
+  color: #999;
+  text-align: center;
+  margin-top: 12rpx;
 }
 
 .loading-state {

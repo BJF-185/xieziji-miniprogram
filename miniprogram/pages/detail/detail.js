@@ -34,7 +34,8 @@ Page({
     statusText: '',
     statusDesc: '',
     statusCardClass: '',
-    createTimeStr: ''
+    createTimeStr: '',
+    paymentProofUrl: ''
   },
 
   onLoad: function (options) {
@@ -88,6 +89,8 @@ Page({
             statusCardClass: statusCardClass,
             createTimeStr: this.formatFullTime(order.createTime),
             loading: false
+          }, () => {
+            this.resolvePaymentProof(order.paymentProofFileID)
           })
         } else if (result.message === '未登录或登录已过期') {
           wx.removeStorageSync('isAdmin')
@@ -103,6 +106,43 @@ Page({
         this.setData({ loading: false })
       }
     })
+  },
+
+  // 解析转账截图 fileID 为可访问的临时 URL
+  resolvePaymentProof: function (fileID) {
+    if (!fileID) {
+      this.setData({ paymentProofUrl: '' })
+      return
+    }
+    wx.cloud.getTempFileURL({
+      fileList: [fileID],
+      success: (res) => {
+        const url = (res.fileList && res.fileList[0] && res.fileList[0].tempFileURL) || ''
+        this.setData({ paymentProofUrl: url })
+      },
+      fail: (err) => {
+        console.error('获取转账截图链接失败', err)
+      }
+    })
+  },
+
+  // 预览转账截图
+  previewPaymentProof: function () {
+    const url = this.data.paymentProofUrl
+    if (!url) {
+      wx.showToast({ title: '凭证加载中', icon: 'none' })
+      return
+    }
+    wx.previewImage({
+      urls: [url],
+      fail: () => {
+        wx.showToast({ title: '预览失败', icon: 'none' })
+      }
+    })
+  },
+
+  onProofError: function () {
+    console.warn('转账截图加载失败')
   },
 
   goBack: function () {

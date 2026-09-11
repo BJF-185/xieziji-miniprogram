@@ -1,7 +1,7 @@
 <view class="page-container page-with-tabbar">
   <view class="custom-navbar">
     <view class="nav-placeholder" style="height: {{statusBarHeight}}px;"></view>
-    <view class="navbar-content" bindlongtap="onAdminEntry">
+    <view class="navbar-content" style="height: {{navContentHeight}}px;" bindlongtap="onAdminEntry">
       <view class="navbar-left"></view>
       <view class="navbar-center">
         <text class="navbar-title">我的</text>
@@ -11,71 +11,85 @@
   </view>
 
   <view class="content-area" style="padding-top: {{navTotalHeight}}px;">
-    <view class="filter-card">
-      <view class="filter-item {{currentFilter === 'all' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="all">
-        <text class="filter-num">{{totalCount}}</text>
-        <text class="filter-label">全部</text>
+
+    <!-- 个人信息卡片 -->
+    <view class="profile-card" bindtap="openEditProfile">
+      <view class="profile-avatar">
+        <image wx:if="{{avatarUrl}}" class="profile-avatar-img" src="{{avatarUrl}}" mode="aspectFill"></image>
+        <view wx:else class="profile-avatar-placeholder">
+          <text>{{nickname ? nickname[0] : '我'}}</text>
+        </view>
       </view>
-      <view class="filter-item {{currentFilter === 'unpaid' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="unpaid">
-        <text class="filter-num">{{unpaidCount}}</text>
-        <text class="filter-label">待付款</text>
+      <view class="profile-info">
+        <text class="profile-nickname">{{nickname || '未设置昵称'}}</text>
+        <text class="profile-tip">点击编辑头像昵称</text>
       </view>
-      <view class="filter-item {{currentFilter === 'pending' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="pending">
-        <text class="filter-num">{{queuingCount}}</text>
-        <text class="filter-label">排队中</text>
+      <view class="profile-edit-arrow"></view>
+    </view>
+
+    <!-- 未完成订单（上） -->
+    <view wx:if="{{unfinishedOrders.length > 0}}" class="order-card" wx:for="{{unfinishedOrders}}" wx:key="_id" bindtap="goDetail" data-id="{{item._id}}">
+      <view class="info-section">
+        <!-- 进度条 -->
+        <view class="progress-bar">
+          <view class="progress-track">
+            <block wx:for="{{item.progressSteps}}" wx:for-item="step" wx:key="index">
+              <view class="progress-node">
+                <view class="progress-line {{step.done ? 'done' : ''}}" wx:if="{{index < 3}}"></view>
+                <view class="progress-dot {{step.done ? 'done' : ''}} {{step.active ? 'active' : ''}}"></view>
+              </view>
+            </block>
+          </view>
+          <view class="progress-labels">
+            <text wx:for="{{item.progressSteps}}" wx:for-item="step" wx:key="index" class="progress-label {{step.done || step.active ? 'highlight' : ''}}">{{step.label}}</text>
+          </view>
+        </view>
+        <view class="info-row">
+          <text class="info-label">文件名</text>
+          <text class="info-value">{{item.fileName}}</text>
+        </view>
+        <view class="info-row" wx:if="{{item.price}}">
+          <text class="info-label">金额</text>
+          <view class="info-value price-wrap">
+            <text class="price-symbol">¥</text>
+            <text class="price-num">{{item.price}}</text>
+          </view>
+        </view>
+        <view class="info-row">
+          <text class="info-label">提交时间</text>
+          <text class="info-value">{{item.createTimeStr}}</text>
+        </view>
       </view>
-      <view class="filter-item {{currentFilter === 'doing' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="doing">
-        <text class="filter-num">{{processingCount}}</text>
-        <text class="filter-label">处理中</text>
-      </view>
-      <view class="filter-item {{currentFilter === 'done' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="done">
-        <text class="filter-num">{{doneCount}}</text>
-        <text class="filter-label">已完成</text>
-      </view>
-      <view class="filter-item {{currentFilter === 'cancelled' ? 'active' : ''}}" bindtap="onFilterTap" data-filter="cancelled">
-        <text class="filter-num">{{cancelledCount}}</text>
-        <text class="filter-label">已取消</text>
+      <view class="card-action">
+        <text class="action-text">查看详情</text>
+        <view class="arrow-icon"></view>
       </view>
     </view>
 
-    <view class="order-list" wx:if="{{filteredOrders.length > 0}}">
-      <view class="order-card" wx:for="{{filteredOrders}}" wx:key="_id" bindtap="goDetail" data-id="{{item._id}}">
-        <view class="order-header">
-          <text class="order-title">{{item.fileName}}</text>
+    <!-- 已完成订单列表（下） -->
+    <view wx:if="{{finishedOrders.length > 0}}" class="history-section">
+      <text class="history-title">已完成的预约 ({{finishedCount}})</text>
+      <view class="history-list">
+        <view class="history-item" wx:for="{{finishedOrders}}" wx:for-item="item" wx:key="_id" bindtap="goHistory" data-id="{{item._id}}">
+          <view class="history-item-info">
+            <text class="history-item-name">{{item.fileName}}</text>
+            <text class="history-item-time">{{item.createTimeStr}}</text>
+          </view>
           <view class="status-tag status-{{item.displayStatus}}">
             <text>{{item.statusText}}</text>
           </view>
-        </view>
-        <view class="order-body">
-          <view class="order-row" wx:if="{{item.price}}">
-            <text class="row-label">金额</text>
-            <view class="row-value price-wrap">
-              <text class="price-symbol">¥</text>
-              <text class="price-num">{{item.price}}</text>
-            </view>
-          </view>
-        </view>
-        <view class="order-footer">
-          <text class="order-time">{{item.createTimeStr}}</text>
-          <view class="order-action">
-            <view class="btn-pay" wx:if="{{item.displayStatus === 'unpaid'}}" catchtap="goPayment" data-id="{{item._id}}">
-              <text>去支付</text>
-            </view>
-            <view class="detail-link" wx:else catchtap="goDetail" data-id="{{item._id}}">
-              <text>查看详情</text>
-              <view class="arrow-icon"></view>
-            </view>
-          </view>
+          <view class="history-arrow"></view>
         </view>
       </view>
     </view>
 
-    <view class="empty-state" wx:if="{{filteredOrders.length === 0 && !loading}}">
+    <!-- 空状态 -->
+    <view wx:if="{{!loading && unfinishedOrders.length === 0 && finishedOrders.length === 0}}" class="empty-state">
       <view class="empty-circle">
         <text class="empty-char">约</text>
       </view>
-      <text class="empty-text">{{currentFilter === 'all' ? '暂无预约记录' : '该状态下暂无预约'}}</text>
-      <view class="empty-btn" wx:if="{{currentFilter === 'all'}}" bindtap="goOrder">
+      <text class="empty-text">暂无预约</text>
+      <view class="empty-btn" bindtap="goOrder">
         <text>去预约</text>
       </view>
     </view>
@@ -87,6 +101,32 @@
     <view class="bottom-spacing"></view>
   </view>
 
+  <!-- 编辑头像昵称模态 -->
+  <view class="user-modal-mask" wx:if="{{showEditModal}}" catchtouchmove="preventScroll">
+    <view class="user-modal">
+      <view class="user-modal-title">编辑资料</view>
+      <view class="user-modal-sub">设置头像和昵称</view>
+
+      <button class="avatar-picker" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" loading="{{avatarUploading}}">
+        <image wx:if="{{avatarTempPath}}" class="avatar-preview" src="{{avatarTempPath}}" mode="aspectFill"></image>
+        <view wx:else class="avatar-placeholder">
+          <text class="avatar-plus">＋</text>
+          <text class="avatar-hint">选择头像</text>
+        </view>
+      </button>
+
+      <view class="nickname-input-wrap">
+        <text class="nickname-label">昵称</text>
+        <input class="nickname-input" type="nickname" placeholder="请输入昵称" value="{{nicknameDraft}}" bindinput="onNicknameInput" maxlength="20"/>
+      </view>
+
+      <view class="user-modal-btns">
+        <view class="btn-skip" bindtap="closeEditModal">取消</view>
+        <view class="btn-save {{userInfoReady ? '' : 'disabled'}}" bindtap="saveUserInfo">保存</view>
+      </view>
+    </view>
+  </view>
+
   <view class="tab-bar-container">
     <view class="tab-bar-blur"></view>
     <view class="tab-bar-icons">
@@ -94,10 +134,10 @@
         <image class="tab-icon" src="{{currentTab === 'home' ? '/images/tabbar/home-active.png' : '/images/tabbar/home.png'}}"/>
         <text class="tab-label">首页</text>
       </view>
-      <button class="tab-item tab-contact" open-type="contact">
+      <view class="tab-item tab-contact" bindtap="onGoContact">
         <image class="tab-icon" src="{{currentTab === 'chat' ? '/images/tabbar/chat-active.png' : '/images/tabbar/chat.png'}}"/>
         <text class="tab-label">咨询</text>
-      </button>
+      </view>
       <view class="tab-item {{currentTab === 'my' ? 'active' : ''}}" bindtap="onTabMy">
         <image class="tab-icon" src="{{currentTab === 'my' ? '/images/tabbar/user-active.png' : '/images/tabbar/user.png'}}"/>
         <text class="tab-label">我的</text>

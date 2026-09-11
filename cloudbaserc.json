@@ -16,6 +16,11 @@
       "name": "updateOrderStatus",
       "timeout": 15,
       "runtime": "Nodejs18.15"
+    },
+    {
+      "name": "webAdmin",
+      "timeout": 30,
+      "runtime": "Nodejs16.13"
     }
   ],
   "hosting": {

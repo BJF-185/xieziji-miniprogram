@@ -24,8 +24,57 @@ exports.main = async (event, context) => {
       return await getMyDetail(event, openid)
     case 'downloadFile':
       return await downloadFile(event, openid)
+    case 'getUserInfo':
+      return await getUserInfo(openid)
+    case 'saveUserInfo':
+      return await saveUserInfo(event, openid)
     default:
       return { success: false, message: '未知操作' }
+  }
+}
+
+// ===== 获取当前用户资料（头像/昵称）=====
+async function getUserInfo(openid) {
+  try {
+    const res = await db.collection('users').where({ openid: openid }).limit(1).get()
+    if (res.data && res.data.length > 0) {
+      return { success: true, user: res.data[0] }
+    }
+    return { success: true, user: null }
+  } catch (err) {
+    console.error('获取用户资料失败', err)
+    return { success: false, message: '获取用户资料失败' }
+  }
+}
+
+// ===== 保存当前用户资料（头像/昵称）=====
+async function saveUserInfo(event, openid) {
+  const { nickname, avatarFileID } = event
+  if (!openid) {
+    return { success: false, message: '未获取到用户身份' }
+  }
+  if (!nickname || !nickname.trim()) {
+    return { success: false, message: '请输入昵称' }
+  }
+  try {
+    // 查询是否已有记录
+    const existRes = await db.collection('users').where({ openid: openid }).limit(1).get()
+    const data = {
+      nickname: nickname.trim().substring(0, 20),
+      avatarFileID: avatarFileID || '',
+      updateTime: db.serverDate()
+    }
+    if (existRes.data && existRes.data.length > 0) {
+      await db.collection('users').doc(existRes.data[0]._id).update({ data: data })
+    } else {
+      data.openid = openid
+      data.createTime = db.serverDate()
+      await db.collection('users').add({ data })
+    }
+    return { success: true, message: '保存成功' }
+  } catch (err) {
+    console.error('保存用户资料失败', err)
+    return { success: false, message: '保存失败' }
   }
 }
 

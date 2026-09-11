@@ -13,9 +13,14 @@ Page({
     confirming: false,
     statusBarHeight: 44,
     navTotalHeight: 88,
-    wechatQRUrl: '/images/wechat_pay.png',
+    wechatQRUrl: '/images/wechat_friend_qr.png',
     hasCopiedAmount: false,
-    paymentSubmitted: false
+    paymentSubmitted: false,
+    proofFileID: '',
+    proofTempPath: '',
+    proofUploading: false,
+    canSubmit: false,
+    transferExampleUrl: '/images/transfer_example.png'
   },
 
   onLoad: function (options) {
@@ -42,7 +47,7 @@ Page({
   loadQRCode: function () {
     wx.cloud.getTempFileURL({
       fileList: [
-        'cloud://cloud1-d3gd4qlyef136776e.636c-cloud1-d3gd4qlyef136776e-1453067705/wechat_pay_pay.png'
+        'cloud://cloud1-d3gd4qlyef136776e.636c-cloud1-d3gd4qlyef136776e-1453067705/wechat_friend_qr.png'
       ],
       success: (res) => {
         const url = res.fileList[0].tempFileURL
@@ -51,7 +56,7 @@ Page({
         }
       },
       fail: (err) => {
-        console.error('获取临时链接失败，使用本地图片', err)
+        console.error('获取加好友二维码失败，使用本地图片', err)
       }
     })
   },
@@ -67,7 +72,7 @@ Page({
       success: () => {
         this.setData({ hasCopiedAmount: true })
         wx.showToast({
-          title: '估价已复制',
+          title: '已复制',
           icon: 'success'
         })
       },
@@ -81,45 +86,103 @@ Page({
   },
 
   onQrError: function () {
-    console.log('图片加载失败')
+    console.log('二维码图片加载失败')
   },
 
-  previewQrCode: function () {
-    const qrPath = this.data.wechatQRUrl || '/images/wechat_pay.png'
+  // 示例图片加载失败时的 fallback
+  onExampleError: function () {
+    console.log('示例图片加载失败')
+  },
 
-    wx.previewImage({
-      current: qrPath,
-      urls: [qrPath],
-      fail: function (err) {
-        console.error('预览图片失败', err)
-        wx.showToast({
-          title: '预览失败',
-          icon: 'none'
+  // 长按二维码提示（实际识别由 image 的 show-menu-by-longpress 处理）
+  onQrLongPress: function () {
+    // 保留空方法以避免某些版本下 wrapper 拦截长按事件
+  },
+
+  // 选择转账截图
+  chooseProof: function () {
+    if (this.data.proofUploading) return
+
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sourceType: ['album', 'camera'],
+      success: (res) => {
+        const file = res.tempFiles[0]
+        if (file.size > 5 * 1024 * 1024) {
+          wx.showToast({ title: '图片不能超过5MB', icon: 'none' })
+          return
+        }
+        this.uploadProof(file.tempFilePath)
+      },
+      fail: () => {
+        // 用户取消选择
+      }
+    })
+  },
+
+  // 上传截图到云存储
+  uploadProof: function (tempFilePath) {
+    this.setData({ proofUploading: true, proofTempPath: tempFilePath })
+    wx.showLoading({ title: '上传中...' })
+
+    const ts = Date.now()
+    const cloudPath = `payment-proof/${this.data.orderNo}_${ts}.jpg`
+
+    wx.cloud.uploadFile({
+      cloudPath: cloudPath,
+      filePath: tempFilePath,
+      config: {
+        isPublic: true
+      },
+      success: (res) => {
+        this.setData({
+          proofFileID: res.fileID,
+          proofUploading: false,
+          canSubmit: true
+        })
+        wx.hideLoading()
+        wx.showToast({ title: '上传成功', icon: 'success' })
+      },
+      fail: (err) => {
+        this.setData({ proofUploading: false })
+        wx.hideLoading()
+        console.error('上传截图失败', err)
+        wx.showModal({
+          title: '上传失败',
+          content: '请重试',
+          showCancel: false
         })
       }
     })
   },
 
-  confirmPayment: function () {
-    if (this.data.confirming) return
-
-    wx.showModal({
-      title: '完成支付',
-      content: '请确认已支付正确金额，收到正确金额后开始书写',
-      confirmText: '已支付',
-      cancelText: '再等等',
-      confirmColor: '#1a1a1a',
-      success: (res) => {
-        if (res.confirm) {
-          // 用户在「已支付」按钮的真实点击同步流程里弹订阅消息授权
-          // 微信要求必须在用户点击事件同步流程里调 requestSubscribeMessage
-          this.requestNotifyAndSubmit()
-        }
-      }
+  // 删除已上传截图
+  removeProof: function () {
+    const fileID = this.data.proofFileID
+    if (fileID) {
+      wx.cloud.deleteFile({ fileList: [fileID] })
+        .catch(err => console.warn('删除云端截图失败', err))
+    }
+    this.setData({
+      proofFileID: '',
+      proofTempPath: '',
+      canSubmit: false
     })
   },
 
-  // 在用户点击「已支付」按钮后同步触发订阅消息授权，然后继续提交
+  // 底部"完成"按钮
+  confirmPayment: function () {
+    if (this.data.confirming) return
+    if (!this.data.proofFileID) {
+      wx.showToast({ title: '请先上传转账截图', icon: 'none' })
+      return
+    }
+    // 直接进入订阅消息授权 + 提交（无需再弹"已支付"确认弹窗）
+    this.requestNotifyAndSubmit()
+  },
+
+  // 在用户点击「完成」按钮后同步触发订阅消息授权，然后继续提交
   requestNotifyAndSubmit: function () {
     if (!CUSTOMER_DONE_TEMPLATE_ID || CUSTOMER_DONE_TEMPLATE_ID === 'PENDING_APPLY') {
       // 没配模板，直接提交
@@ -154,7 +217,8 @@ Page({
         action: 'confirmPayment',
         orderId: this.data.orderId,
         paymentMethod: 'wechat',
-        paymentNote: ''
+        paymentNote: '',
+        paymentProofFileID: this.data.proofFileID
       },
       success: (res) => {
         wx.hideLoading()

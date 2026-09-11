@@ -1,4 +1,4 @@
-﻿const API_BASE = 'https://cloud1-d3gd4qlyef136776e-1453067705.ap-shanghai.app.tcloudbase.com/webAdmin'
+const API_BASE = 'https://cloud1-d3gd4qlyef136776e-1453067705.ap-shanghai.app.tcloudbase.com/webAdmin'
 
 // ===== Global State =====
 let allOrders = []
@@ -9,6 +9,12 @@ let pageSize = 10
 let searchKeyword = ''
 let notifications = []
 let currentDetailOrderId = null
+let selectedIds = new Set()
+let workbenchQueue = []   // 当前工作台的订单快照
+let workbenchIndex = 0
+let workbenchTotal = 0
+let workbenchFilter = 'confirm' // 工作台队列筛选：confirm / pending / doing
+let workbenchSort = 'timeAsc' // 工作台队列排序：timeAsc(早→晚) / timeDesc(晚→早)
 
 // ===== Status Maps =====
 const STATUS_MAP = {
@@ -44,6 +50,17 @@ const FILTER_TABS = [
   { key: 'done', label: '已完成' },
   { key: 'cancelled', label: '已取消' }
 ]
+
+// 字体名称 → 字体预览图（与 miniprogram/pages/order/order.js 保持一致）
+const FONT_IMAGE_MAP = {
+  '楷书': 'images/fonts/1.png',
+  '硬笔': 'images/fonts/2.png',
+  '硬笔行书': 'images/fonts/3.png',
+  '行书': 'images/fonts/4.png',
+  '行楷': 'images/fonts/5.png',
+  '行草': 'images/fonts/6.png',
+  '草书': 'images/fonts/7.png'
+}
 
 // ===== Auth =====
 function getToken() { return localStorage.getItem('admin_token') }
@@ -266,12 +283,34 @@ function renderTable() {
 
   tbody.innerHTML = pageData.map(o => {
     const st = STATUS_DISPLAY(o)
+    const checked = selectedIds.has(o._id) ? 'checked' : ''
     return `
-      <tr class="order-row" onclick="showOrderDetail('${o._id}')">
+      <tr class="order-row ${checked ? 'row-selected' : ''}" onclick="showOrderDetail('${o._id}')">
+        <td class="col-check" onclick="event.stopPropagation()">
+          <label class="checkbox-wrap">
+            <input type="checkbox" ${checked} onchange="toggleSelect('${o._id}', this.checked)">
+            <span class="checkmark"></span>
+          </label>
+        </td>
         <td><span class="order-time">${formatDate(o.createTime)}</span></td>
-        <td><span class="order-customer">${o.name || '-'}${o.phone ? ' · ' + o.phone : ''}</span></td>
+        <td class="col-customer">
+          <div class="customer-cell">
+            ${o.userAvatar
+              ? `<div class="customer-avatar" style="background-image:url('${o.userAvatar}')"></div>`
+              : `<div class="customer-avatar customer-avatar-default">${(o.userNickname || o.name || '?').slice(0,1)}</div>`}
+            <div class="customer-meta">
+              <div class="customer-nickname">${o.userNickname || o.name || '-'}</div>
+              <div class="customer-sub">${o.name || ''}${o.phone ? ' · ' + o.phone : ''}</div>
+            </div>
+          </div>
+        </td>
         <td><span class="order-file" title="${o.fileName || ''}">${o.fileName || '-'}</span></td>
         <td><span class="order-amount">¥${(o.price || 0).toFixed(2)}</span></td>
+        <td class="col-proof">
+          ${o.paymentProofUrl
+            ? `<img class="proof-thumb" src="${o.paymentProofUrl}" onclick="previewPaymentProof(this)" title="查看转账截图"/>`
+            : '<span class="proof-empty">-</span>'}
+        </td>
         <td><span class="status-tag ${st.cls}">${st.label}</span></td>
         <td>${getActionButtons(o)}</td>
       </tr>
@@ -330,6 +369,100 @@ function changePageSize(val) {
   renderPagination()
 }
 
+// ===== Bulk Selection =====
+function toggleSelect(orderId, checked) {
+  if (checked) selectedIds.add(orderId)
+  else selectedIds.delete(orderId)
+  updateBulkBar()
+  renderTable()
+}
+
+function toggleSelectAll(checked) {
+  const start = (currentPage - 1) * pageSize
+  const pageData = filteredOrders.slice(start, start + pageSize)
+  if (checked) {
+    pageData.forEach(o => selectedIds.add(o._id))
+  } else {
+    pageData.forEach(o => selectedIds.delete(o._id))
+  }
+  updateBulkBar()
+  renderTable()
+}
+
+function clearSelection() {
+  selectedIds.clear()
+  const checkAll = document.getElementById('checkAll')
+  if (checkAll) checkAll.checked = false
+  updateBulkBar()
+  renderTable()
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulkBar')
+  const countEl = document.getElementById('bulkSelectedCount')
+  if (!bar || !countEl) return
+  const count = selectedIds.size
+  countEl.textContent = `已选 ${count} 项`
+  if (count > 0) bar.classList.add('show')
+  else bar.classList.remove('show')
+}
+
+function getSelectedIds() {
+  return Array.from(selectedIds)
+}
+
+async function bulkChangeStatus() {
+  const sel = getSelectedIds()
+  if (sel.length === 0) { showToast('请先勾选订单', 'error'); return }
+  const select = document.getElementById('bulkStatusSelect')
+  const status = select.value
+  if (!status) { showToast('请选择要修改的状态', 'error'); return }
+  if (!confirm(`确定将选中的 ${sel.length} 个订单状态统一改为"${STATUS_MAP[status]}"吗？`)) return
+  try {
+    const res = await apiRequest('batchUpdateStatus', { orderIds: sel, status })
+    if (res.success) {
+      showToast(res.message || '批量更新成功', 'success')
+      clearSelection()
+      await loadOrders()
+    } else {
+      showToast(res.message || '批量更新失败', 'error')
+    }
+  } catch (e) { showToast('网络错误', 'error') }
+}
+
+async function bulkConfirmPayment() {
+  const sel = getSelectedIds()
+  if (sel.length === 0) { showToast('请先勾选订单', 'error'); return }
+  if (!confirm(`确定要确认选中的 ${sel.length} 个订单已收款吗？确认后订单将进入待处理。`)) return
+  try {
+    const res = await apiRequest('batchConfirmPayment', { orderIds: sel })
+    if (res.success) {
+      showToast(res.message || '批量确认成功', 'success')
+      clearSelection()
+      await loadOrders()
+    } else {
+      showToast(res.message || '批量确认失败', 'error')
+    }
+  } catch (e) { showToast('网络错误', 'error') }
+}
+
+async function bulkDelete() {
+  const sel = getSelectedIds()
+  if (sel.length === 0) { showToast('请先勾选订单', 'error'); return }
+  if (!confirm(`确定要删除选中的 ${sel.length} 个订单吗？此操作不可恢复。`)) return
+  if (!confirm(`再次确认：即将永久删除 ${sel.length} 个订单，确定继续？`)) return
+  try {
+    const res = await apiRequest('batchDelete', { orderIds: sel })
+    if (res.success) {
+      showToast(res.message || '批量删除成功', 'success')
+      clearSelection()
+      await loadOrders()
+    } else {
+      showToast(res.message || '批量删除失败', 'error')
+    }
+  } catch (e) { showToast('网络错误', 'error') }
+}
+
 // ===== Export CSV =====
 function exportCSV() {
   if (filteredOrders.length === 0) {
@@ -367,11 +500,13 @@ async function loadOrders() {
     const res = await apiRequest('getOrders')
     if (res.success) {
       allOrders = res.orders || []
+      clearSelection()
       filterOrders()
       renderStats()
       renderFilterTabs()
       renderTable()
       renderPagination()
+      updateWorkbenchBadge()
     } else {
       showToast(res.message || '加载失败', 'error')
     }
@@ -502,10 +637,23 @@ function renderOrderDetail(order) {
     fileHTML = `
       <div class="detail-section">
         <div class="detail-section-title">附件文件</div>
-        <a class="detail-file-link" onclick="downloadFile('${order._id}')">
+        <a class="detail-file-link" onclick="downloadFile('${order.fileID}')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           ${order.fileName || '下载文件'}
         </a>
+      </div>
+    `
+  }
+
+  let proofHTML = ''
+  if (order.paymentProofUrl) {
+    proofHTML = `
+      <div class="detail-section">
+        <div class="detail-section-title">转账截图</div>
+        <div class="proof-preview">
+          <img class="proof-thumb-lg" src="${order.paymentProofUrl}" onclick="previewPaymentProof(this)" alt="转账截图"/>
+        </div>
+        <p class="proof-caption">客户上传的转账凭证，请人工核对金额（订单金额 <span class="highlight">¥${price}</span>）</p>
       </div>
     `
   }
@@ -528,6 +676,10 @@ function renderOrderDetail(order) {
       <div class="detail-grid">
         <div class="detail-item"><span class="detail-label">订单状态</span><span class="detail-value"><span class="status-tag ${st.cls}">${st.label}</span></span></div>
         <div class="detail-item"><span class="detail-label">支付状态</span><span class="detail-value">${ps === 'paid' ? '已支付待确认' : ps === 'confirmed' ? '已确认' : '待付款'}</span></div>
+        ${order.userAvatar ? `<div class="detail-item"><span class="detail-label">头像</span><span class="detail-value detail-customer">
+          <img class="detail-avatar" src="${order.userAvatar}" alt="头像"/>
+          <span>${order.userNickname || '--'}</span>
+        </span></div>` : order.userNickname ? `<div class="detail-item"><span class="detail-label">客户昵称</span><span class="detail-value">${order.userNickname}</span></div>` : ''}
         <div class="detail-item"><span class="detail-label">客户姓名</span><span class="detail-value">${order.name || '-'}</span></div>
         <div class="detail-item"><span class="detail-label">联系电话</span><span class="detail-value">${order.phone || '-'}</span></div>
         <div class="detail-item"><span class="detail-label">订单金额</span><span class="detail-value highlight">¥${price}</span></div>
@@ -543,6 +695,7 @@ function renderOrderDetail(order) {
       <div class="detail-value" style="background:#f9f8f6;padding:12px;border-radius:10px;">${order.remark}</div>
     </div>` : ''}
     ${fileHTML}
+    ${proofHTML}
     ${confirmPayHTML}
     <div class="detail-section">
       <div class="detail-section-title">更改状态</div>
@@ -582,9 +735,38 @@ window.markAllRead = markAllRead
 window.hideNewOrderToast = hideNewOrderToast
 window.goToNewOrder = () => { hideNewOrderToast(); loadOrders() }
 
-window.downloadFile = async function(orderId) {
+window.toggleSelect = toggleSelect
+window.toggleSelectAll = toggleSelectAll
+window.clearSelection = clearSelection
+window.bulkChangeStatus = bulkChangeStatus
+window.bulkConfirmPayment = bulkConfirmPayment
+window.bulkDelete = bulkDelete
+
+// 放大预览转账截图（页内浮层，不下载）
+function previewPaymentProof(img) {
+  if (!img || !img.src) return
+  let overlay = document.getElementById('proofPreviewOverlay')
+  if (!overlay) {
+    overlay = document.createElement('div')
+    overlay.id = 'proofPreviewOverlay'
+    overlay.className = 'proof-overlay'
+    overlay.onclick = closeProofPreview
+    overlay.innerHTML = '<img class="proof-overlay-img" alt="转账截图"/>'
+    document.body.appendChild(overlay)
+  }
+  overlay.querySelector('img').src = img.src
+  overlay.classList.add('show')
+}
+function closeProofPreview() {
+  const overlay = document.getElementById('proofPreviewOverlay')
+  if (overlay) overlay.classList.remove('show')
+}
+window.previewPaymentProof = previewPaymentProof
+window.closeProofPreview = closeProofPreview
+
+window.downloadFile = async function(fileID) {
   try {
-    const res = await apiRequest('downloadFile', { orderId })
+    const res = await apiRequest('downloadFile', { fileID })
     if (res.success && res.downloadUrl) {
       window.open(res.downloadUrl, '_blank')
     } else {
@@ -650,14 +832,378 @@ function toggleSidebar() {
 }
 window.toggleSidebar = toggleSidebar
 
+// ===== Workbench =====
+// 判断订单是否属于待确认收款（payStatus='paid' 且未进入后续处理流程）
+function isPendingConfirm(order) {
+  return order.payStatus === 'paid' && order.status !== 'pending' && order.status !== 'doing' && order.status !== 'done' && order.status !== 'cancelled'
+}
+
+// 构建工作台队列（快照）：待确认 → 待处理 → 进行中，组内按时间排序
+function buildWorkbenchQueue() {
+  const wf = workbenchFilter
+  const dir = workbenchSort === 'timeDesc' ? -1 : 1
+  const sortByTime = (a, b) => {
+    const ta = (a.createTime && a.createTime._seconds) ? a.createTime._seconds : new Date(a.createTime || 0).getTime() / 1000
+    const tb = (b.createTime && b.createTime._seconds) ? b.createTime._seconds : new Date(b.createTime || 0).getTime() / 1000
+    return (ta - tb) * dir
+  }
+  const confirm = (wf === 'confirm') ? allOrders.filter(isPendingConfirm).map(o => ({ ...o, mode: 'confirm' })).sort(sortByTime) : []
+  const pending = (wf === 'pending') ? allOrders.filter(o => o.status === 'pending').map(o => ({ ...o, mode: 'pending' })).sort(sortByTime) : []
+  const doing = (wf === 'doing') ? allOrders.filter(o => o.status === 'doing').map(o => ({ ...o, mode: 'doing' })).sort(sortByTime) : []
+  return confirm.concat(pending, doing)
+}
+
+// 工作台队列筛选：all / confirm / pending / doing
+function wbSetFilter(f) {
+  if (f === workbenchFilter) return
+  workbenchFilter = f
+  // 更新筛选按钮高亮
+  document.querySelectorAll('.wb-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.wf === f)
+  })
+  rebuildWorkbench()
+}
+
+// 工作台队列排序切换：timeAsc ⇄ timeDesc
+function wbToggleSort() {
+  workbenchSort = workbenchSort === 'timeAsc' ? 'timeDesc' : 'timeAsc'
+  const label = document.getElementById('wbSortLabel')
+  if (label) label.textContent = workbenchSort === 'timeAsc' ? '时间早→晚' : '时间晚→早'
+  rebuildWorkbench()
+}
+
+// 更新侧边栏工作台徽标（待确认+待处理+进行中）
+function updateWorkbenchBadge() {
+  const badge = document.getElementById('workbenchBadge')
+  if (!badge) return
+  const count = allOrders.filter(o => isPendingConfirm(o) || o.status === 'pending' || o.status === 'doing').length
+  if (count > 0) {
+    badge.textContent = count
+    badge.style.display = 'flex'
+  } else {
+    badge.style.display = 'none'
+  }
+  // 顶部筛选按钮分别显示各分类的订单数量
+  updateWorkbenchFilterCounts()
+}
+
+// 更新顶部筛选按钮（待确认/待处理/书写中）各自的数量
+function updateWorkbenchFilterCounts() {
+  const confirmCount = allOrders.filter(o => isPendingConfirm(o)).length
+  const pendingCount = allOrders.filter(o => o.status === 'pending').length
+  const doingCount = allOrders.filter(o => o.status === 'doing').length
+  const elC = document.getElementById('wfCountConfirm')
+  const elP = document.getElementById('wfCountPending')
+  const elD = document.getElementById('wfCountDoing')
+  if (elC) elC.textContent = confirmCount
+  if (elP) elP.textContent = pendingCount
+  if (elD) elD.textContent = doingCount
+}
+
+// 进入工作台
+async function openWorkbench() {
+  if (allOrders.length === 0) {
+    await loadOrders()
+  }
+  rebuildWorkbench()
+}
+
+function rebuildWorkbench() {
+  try {
+    workbenchQueue = buildWorkbenchQueue()
+  } catch (e) {
+    console.error('[Workbench] buildWorkbenchQueue 抛出异常:', e)
+    workbenchQueue = []
+  }
+  workbenchTotal = workbenchQueue.length
+  workbenchIndex = 0
+  renderWorkbench()
+  updateWorkbenchBadge()
+}
+
+// 渲染当前工作台订单
+function renderWorkbench() {
+  const progressEl = document.getElementById('wbProgress')
+  const proofImg = document.getElementById('wbProofImg')
+  const proofEmpty = document.getElementById('wbProofEmpty')
+  const infoRowsEl = document.getElementById('wbInfoRows')
+  const fileEl = document.getElementById('wbFile')
+  const mainBtn = document.getElementById('wbMainBtn')
+
+  // 订单切换时：信息卡与截图区做淡入过渡
+  const infoCard = document.querySelector('.workbench-side')
+  const proofCard = document.querySelector('.wb-proof-card')
+  ;[infoCard, proofCard].forEach(el => {
+    if (!el) return
+    el.classList.remove('wb-refresh')
+    void el.offsetWidth // 强制回流以重启动画
+    el.classList.add('wb-refresh')
+  })
+
+  if (workbenchTotal === 0 || workbenchIndex >= workbenchQueue.length) {
+    const filterLabels = { confirm: '待确认', pending: '待处理', doing: '书写中' }
+    progressEl.textContent = `当前「${filterLabels[workbenchFilter] || ''}」无待办`
+    proofImg.style.display = 'none'
+    proofEmpty.style.display = 'flex'
+    infoRowsEl.innerHTML = '<div class="wb-none">没有需要处理的订单了 🎉</div>'
+    fileEl.style.display = 'none'
+    mainBtn.disabled = true
+    mainBtn.textContent = '已完成'
+    renderQueueBar()
+    return
+  }
+
+  const order = workbenchQueue[workbenchIndex]
+  const price = (order.price || 0).toFixed(2)
+  const modeLabels = { confirm: '待确认收款', pending: '待处理', doing: '书写中' }
+
+  progressEl.textContent = `第 ${workbenchIndex + 1} / ${workbenchTotal} · ${modeLabels[order.mode] || ''}`
+
+  // 截图
+  if (order.paymentProofUrl) {
+    proofImg.src = order.paymentProofUrl
+    proofImg.style.display = 'block'
+    proofEmpty.style.display = 'none'
+  } else {
+    proofImg.style.display = 'none'
+    proofEmpty.style.display = 'flex'
+  }
+
+  // 客户头像 + 昵称头部
+  const nickname = order.userNickname || order.name || '?'
+  const initial = nickname.slice(0, 1)
+  const avatarBlock = order.userAvatar
+    ? `<img class="wb-info-avatar" src="${order.userAvatar}" alt="头像" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>`
+    : ''
+  const defaultAvatar = `<div class="wb-info-avatar wb-info-avatar-default" ${order.userAvatar ? 'style="display:none"' : ''}>${initial}</div>`
+  // 字体预览图（无匹配图片时不渲染容器）
+  const fontImage = order.fontName ? FONT_IMAGE_MAP[order.fontName] : ''
+  const fontImageBlock = fontImage
+    ? `<div class="wb-info-font-img-wrap">
+      <img class="wb-info-font-img" src="${fontImage}" alt="${order.fontName}" onclick="previewFontImage('${fontImage}','${order.fontName || ''}')" onerror="this.parentNode.style.display='none'"/>
+    </div>`
+    : ''
+
+  // 订单信息
+  infoRowsEl.innerHTML = `
+    <div class="wb-info-customer">
+      ${avatarBlock}${defaultAvatar}
+      <div class="wb-info-customer-text">
+        <div class="wb-info-nickname">${nickname}</div>
+        ${order.name && order.name !== nickname ? `<div class="wb-info-realname">${order.name}</div>` : ''}
+      </div>
+    </div>
+    <div class="wb-info-row">
+      <span class="wb-info-label">电话</span>
+      <span class="wb-info-value">${order.phone || '-'}</span>
+    </div>
+    <div class="wb-info-row">
+      <span class="wb-info-label">金额</span>
+      <span class="wb-info-value wb-amount">¥${price}</span>
+    </div>
+    <div class="wb-info-row">
+      <span class="wb-info-label">字体</span>
+      <span class="wb-info-value">${order.fontName || '-'}</span>
+    </div>
+    ${fontImageBlock}
+    <div class="wb-info-row">
+      <span class="wb-info-label">时间</span>
+      <span class="wb-info-value">${formatDate(order.createTime)}</span>
+    </div>
+    ${order.remark ? `
+    <div class="wb-info-row wb-remark-row">
+      <span class="wb-info-label">备注</span>
+      <span class="wb-info-value">${order.remark}</span>
+    </div>` : ''}
+  `
+
+  // 文件下载
+  if (order.fileID) {
+    fileEl.style.display = 'block'
+    fileEl.innerHTML = `<a class="wb-file-link" onclick="event.stopPropagation();downloadFile('${order.fileID}')">下载附件文件 · ${order.fileName || ''}</a>`
+  } else {
+    fileEl.style.display = 'none'
+    fileEl.innerHTML = ''
+  }
+
+  // 主操作按钮
+  const mainMap = { confirm: ['确认收款', '确认已收到客户的转账支付？确认后订单将进入排队等待处理。'], pending: ['开始处理', '确定开始处理该订单？'], doing: ['标记完成', '确定标记该订单为已完成？'] }
+  const [label, tip] = mainMap[order.mode] || ['操作', '']
+  mainBtn.textContent = label
+  mainBtn.disabled = false
+  mainBtn.dataset.tip = tip
+
+  renderQueueBar()
+}
+
+// 渲染待办队列条
+function renderQueueBar() {
+  const bar = document.getElementById('wbQueueBar')
+  if (workbenchTotal === 0 || workbenchQueue.length === 0) {
+    bar.innerHTML = '<div class="wb-none">无待办</div>'
+    return
+  }
+  const modeTxt = { confirm: '待确认', pending: '待处理', doing: '书写中' }
+  bar.innerHTML = workbenchQueue.map((o, i) => {
+    const nickname = o.userNickname || o.name || '?'
+    return `
+    <div class="wb-queue-item ${i === workbenchIndex ? 'active' : ''}" onclick="wbJump(${i})">
+      <div class="wb-queue-top">
+        <span class="wb-queue-idx">${i + 1}</span>
+        <span class="wb-queue-name">${nickname}</span>
+        <span class="wb-queue-tag mode-${o.mode}">${modeTxt[o.mode]}</span>
+      </div>
+      <div class="wb-queue-file" title="${o.fileName || ''}">${o.fileName || '无附件'}</div>
+    </div>`
+  }).join('')
+}
+
+// 主操作：确认/开始/完成
+async function wbMainAction() {
+  const order = workbenchQueue[workbenchIndex]
+  if (!order) return
+  const mainBtn = document.getElementById('wbMainBtn')
+
+  // 开始处理前，若当前存在其他书写中订单，提示会自动将其标记完成，保证同一时间只有一个书写中
+  let tip = mainBtn.dataset.tip || '确定执行该操作？'
+  if (order.mode === 'pending') {
+    const curDoing = allOrders.filter(o => o.status === 'doing' && o._id !== order._id).length
+    if (curDoing > 0) tip = `当前已有 ${curDoing} 个订单处于书写中。开始书写将自动把这 ${curDoing} 个订单标记为均完成，确定开始？`
+  }
+  if (!confirm(tip)) return
+  mainBtn.disabled = true
+
+  try {
+    let res
+    if (order.mode === 'confirm') {
+      res = await apiRequest('confirmPayment', { orderId: order._id })
+    } else if (order.mode === 'pending') {
+      // 开始书写前，先把其他处于"书写中"的订单自动完成，保证同时只有一个书写中
+      // 从全局 allOrders 查找，避免受当前筛选分类影响
+      const doingIds = allOrders
+        .filter(o => o.status === 'doing' && o._id !== order._id)
+        .map(o => o._id)
+      if (doingIds.length > 0) {
+        const doneRes = await apiRequest('batchUpdateStatus', { orderIds: doingIds, status: 'done' })
+        if (!doneRes.success) {
+          showToast(doneRes.message || '自动完成书写中订单失败', 'error')
+          mainBtn.disabled = false
+          return
+        }
+      }
+      res = await apiRequest('updateStatus', { orderId: order._id, status: 'doing' })
+    } else {
+      res = await apiRequest('updateStatus', { orderId: order._id, status: 'done' })
+    }
+    if (res.success) {
+      showToast(res.message || '操作成功', 'success')
+      // 重新从最新订单数据构建队列：当前订单已移出该分类，自动完成的书写中订单也已变为完成
+      await loadOrders()
+      rebuildWorkbench()
+    } else {
+      showToast(res.message || '操作失败', 'error')
+      mainBtn.disabled = false
+    }
+  } catch (e) {
+    showToast('网络错误', 'error')
+    mainBtn.disabled = false
+  }
+}
+
+// 跳过：移动到下一个
+function wbSkip() {
+  if (workbenchTotal === 0) return
+  if (workbenchIndex < workbenchQueue.length - 1) {
+    workbenchIndex++
+  } else {
+    showToast('已经是最后一单', 'info')
+    return
+  }
+  renderWorkbench()
+}
+
+// 跳转到某单
+function wbJump(i) {
+  if (i >= 0 && i < workbenchQueue.length) {
+    workbenchIndex = i
+    renderWorkbench()
+  }
+}
+
+// 删除当前订单（复用后端删除）
+async function wbDelete() {
+  const order = workbenchQueue[workbenchIndex]
+  if (!order) return
+  if (!confirm('确定要删除这个订单吗？此操作不可恢复。')) return
+  if (!confirm('再次确认：即将永久删除该订单，确定继续？')) return
+  try {
+    const res = await apiRequest('deleteOrder', { orderId: order._id })
+    if (res.success) {
+      showToast('订单已删除', 'success')
+      workbenchQueue.splice(workbenchIndex, 1)
+      workbenchTotal = workbenchQueue.length
+      if (workbenchIndex >= workbenchQueue.length) workbenchIndex = Math.max(0, workbenchQueue.length - 1)
+      await loadOrders()
+      renderWorkbench()
+      updateWorkbenchBadge()
+    } else {
+      showToast(res.message || '删除失败', 'error')
+    }
+  } catch (e) {
+    showToast('网络错误', 'error')
+  }
+}
+
+window.openWorkbench = openWorkbench
+window.wbMainAction = wbMainAction
+window.wbSkip = wbSkip
+window.wbJump = wbJump
+window.wbDelete = wbDelete
+window.wbSetFilter = wbSetFilter
+window.wbToggleSort = wbToggleSort
+window.previewFontImage = previewFontImage
+
+// 点击字体预览图：全屏查看
+function previewFontImage(src, name) {
+  if (!src) return
+  let overlay = document.getElementById('fontPreviewOverlay')
+  if (!overlay) {
+    overlay = document.createElement('div')
+    overlay.id = 'fontPreviewOverlay'
+    overlay.className = 'font-preview-overlay'
+    overlay.innerHTML = `
+      <div class="font-preview-title"></div>
+      <img class="font-preview-img" alt=""/>
+    `
+    overlay.addEventListener('click', () => overlay.classList.remove('show'))
+    document.body.appendChild(overlay)
+  }
+  overlay.querySelector('.font-preview-title').textContent = name || ''
+  overlay.querySelector('.font-preview-img').src = src
+  overlay.classList.add('show')
+}
+
 // ===== Sidebar Menu Switch =====
 function switchMenu(menu) {
   // update active state
   document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'))
   document.querySelector(`[data-menu="${menu}"]`)?.classList.add('active')
 
+  const contentArea = document.querySelector('.content-area')
+  const workbenchView = document.getElementById('workbenchView')
+
+  if (menu === 'workbench') {
+    // 显示工作台，隐藏订单管理
+    if (contentArea) contentArea.style.display = 'none'
+    if (workbenchView) workbenchView.style.display = 'block'
+    openWorkbench()
+    return
+  }
+
   if (menu === 'home' || menu === 'orders') {
-    // main order view - already showing
+    // 主订单视图
+    if (workbenchView) workbenchView.style.display = 'none'
+    if (contentArea) contentArea.style.display = 'block'
     return
   }
   // other menus - show toast
@@ -760,4 +1306,7 @@ function initMainPage() {
 
   // Load orders
   loadOrders()
+
+  // 初始化工作台徽标
+  updateWorkbenchBadge()
 }

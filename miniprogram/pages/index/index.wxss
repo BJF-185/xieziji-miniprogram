@@ -212,3 +212,150 @@ button.tab-item::after {
 .tab-item.active .tab-icon {
   opacity: 1;
 }
+
+/* ===== 首次进入：完善资料模态 ===== */
+.user-modal-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-modal {
+  width: 600rpx;
+  background: #ffffff;
+  border-radius: 32rpx;
+  padding: 48rpx 40rpx 40rpx;
+  box-sizing: border-box;
+}
+
+.user-modal-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+  text-align: center;
+}
+
+.user-modal-sub {
+  font-size: 24rpx;
+  color: #999999;
+  text-align: center;
+  margin-top: 12rpx;
+  margin-bottom: 40rpx;
+}
+
+.avatar-picker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 180rpx;
+  height: 180rpx;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: #f5f5f5;
+  padding: 0;
+  line-height: normal;
+  overflow: hidden;
+  position: relative;
+}
+
+.avatar-picker::after {
+  border: none;
+}
+
+.avatar-preview {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.avatar-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-plus {
+  font-size: 48rpx;
+  color: #b0b0b0;
+  line-height: 1;
+}
+
+.avatar-hint {
+  font-size: 20rpx;
+  color: #999999;
+  margin-top: 8rpx;
+}
+
+.nickname-input-wrap {
+  display: flex;
+  align-items: center;
+  margin-top: 40rpx;
+  background: #f8f7f4;
+  border-radius: 16rpx;
+  padding: 0 24rpx;
+  height: 88rpx;
+}
+
+.nickname-label {
+  font-size: 28rpx;
+  color: #1a1a1a;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+}
+
+.nickname-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: #1a1a1a;
+}
+
+.user-modal-btns {
+  display: flex;
+  align-items: center;
+  margin-top: 48rpx;
+  gap: 20rpx;
+}
+
+.btn-skip {
+  flex: 1;
+  height: 84rpx;
+  line-height: 84rpx;
+  text-align: center;
+  border-radius: 24rpx;
+  background: #f5f5f5;
+  color: #999999;
+  font-size: 30rpx;
+}
+
+.btn-skip:active {
+  opacity: 0.8;
+}
+
+.btn-save {
+  flex: 1;
+  height: 84rpx;
+  line-height: 84rpx;
+  text-align: center;
+  border-radius: 24rpx;
+  background: #1a1a1a;
+  color: #ffffff;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.btn-save.disabled {
+  background: #d8d8d8;
+  color: #ffffff;
+}
+
+.btn-save:active {
+  opacity: 0.85;
+}

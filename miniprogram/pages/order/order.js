@@ -6,7 +6,7 @@ Page({
     phone: '',
     notebookSize: '',
     notebookIndex: -1,
-    notebookList: ['仰恩纸', '自己的本子或其他（需联系）'],
+    notebookList: ['仰恩纸', '自己的本子或其他（请联系后下单）'],
     fontList: [
       { id: 0, name: '楷书',     image: '/images/fonts/1.png' },
       { id: 1, name: '硬笔',     image: '/images/fonts/2.png' },
@@ -34,6 +34,7 @@ Page({
     navTotalHeight: 88,
     isEdit: false,
     orderId: '',
+    orderNo: '',
     originalFileID: ''
   },
 
@@ -128,7 +129,8 @@ Page({
           wordCount: order.wordCount || 0,
           subtotal: (order.price || 0).toFixed(2),
           subtotalNum: order.price || 0,
-          totalPrice: (order.price || 0).toFixed(2)
+          totalPrice: (order.price || 0).toFixed(2),
+          orderNo: order.orderNo || ''
         }, this.checkCanSubmit)
       },
       fail: (err) => {
@@ -369,7 +371,7 @@ Page({
     const isEdit = this.data.isEdit
 
     this.setData({ submitting: true })
-    wx.showLoading({ title: isEdit ? '更新中...' : '提交中...' })
+    wx.showLoading({ title: '提交中...' })
 
     const callData = {
       action: isEdit ? 'updateOrder' : 'createOrder',
@@ -393,35 +395,21 @@ Page({
         wx.hideLoading()
         const result = res.result
         if (result.success) {
-          if (isEdit) {
-            // 编辑模式：清除刚创建的订单ID（防止 onShow 再次自动加载）
-            wx.removeStorageSync('lastSubmittedOrder')
-            const editApp = getApp()
-            if (editApp && editApp.globalData) {
-              editApp.globalData.lastSubmittedOrder = null
-            }
-            // 编辑模式：返回详情页
-            wx.showToast({ title: '已更新', icon: 'success' })
-            setTimeout(() => {
-              wx.redirectTo({ url: `/pages/my-detail/my-detail?id=${this.data.orderId}` })
-            }, 600)
-          } else {
-            // 创建模式：保存订单ID，供 onShow 自动加载
-            const newOrder = { orderId: result.orderId, timestamp: Date.now() }
-            wx.setStorageSync('lastSubmittedOrder', newOrder)
-            const createApp = getApp()
-            if (createApp && createApp.globalData) {
-              createApp.globalData.lastSubmittedOrder = newOrder
-            }
-            wx.navigateTo({
-              url: `/pages/payment/payment?orderId=${result.orderId}&orderNo=${result.orderNo}&name=${encodeURIComponent(this.data.name.trim())}&phone=${this.data.phone}&fileName=${encodeURIComponent(this.data.fileInfo.name)}&wordCount=${this.data.wordCount}&price=${this.data.totalPrice}`
-            })
+          // 保存订单ID，供 onShow 自动加载
+          const newOrder = { orderId: result.orderId || this.data.orderId, timestamp: Date.now() }
+          wx.setStorageSync('lastSubmittedOrder', newOrder)
+          const editApp = getApp()
+          if (editApp && editApp.globalData) {
+            editApp.globalData.lastSubmittedOrder = newOrder
           }
+          wx.navigateTo({
+            url: `/pages/payment/payment?orderId=${result.orderId || this.data.orderId}&orderNo=${result.orderNo || this.data.orderNo || ''}&name=${encodeURIComponent(this.data.name.trim())}&phone=${this.data.phone}&fileName=${encodeURIComponent(this.data.fileInfo.name)}&wordCount=${this.data.wordCount}&price=${this.data.totalPrice}`
+          })
         } else {
           this.setData({ submitting: false })
           wx.showModal({
-            title: isEdit ? '更新失败' : '提交失败',
-            content: result.message || (isEdit ? '订单更新失败，请重试' : '预约提交失败，请重试'),
+            title: '提交失败',
+            content: result.message || '预约提交失败，请重试',
             showCancel: false
           })
         }
@@ -431,7 +419,7 @@ Page({
         this.setData({ submitting: false })
         console.error((isEdit ? '更新' : '创建') + '订单失败', err)
         wx.showModal({
-          title: isEdit ? '更新失败' : '提交失败',
+          title: '提交失败',
           content: '网络错误，请重试',
           showCancel: false
         })

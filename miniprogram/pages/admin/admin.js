@@ -248,7 +248,47 @@ Page({
     const phone = e.currentTarget.dataset.phone
     if (!phone) return
     wx.makePhoneCall({ phoneNumber: phone })
-  },  requestSubscribeMessage: function () {
+  },  // 点击铃铛：先检查微信订阅状态，未长期授权则必定弹出授权框让用户勾选"总是保持以上选择"
+  requestSubscribeMessage: function () {
+    wx.getSetting({
+      success: (res) => {
+        const subs = res.subscriptionsSetting || {}
+        // 用户在小程序设置里关闭了订阅消息总开关
+        if (subs.mainSwitch === false) {
+          wx.showModal({
+            title: '订阅消息被关闭',
+            content: '请点击右上角「...」→ 设置 → 打开「订阅消息」，然后再点铃铛开启通知。',
+            showCancel: false
+          })
+          return
+        }
+        const itemStatus = (subs.itemSettings || {})[TEMPLATE_ID]
+        // 之前勾选了"总是保持以上选择"但点了拒绝：微信不再弹框，需去设置重新允许
+        if (itemStatus === 'reject' || itemStatus === 'ban') {
+          wx.showModal({
+            title: '需要重新开启',
+            content: '您之前在授权框点了「拒绝」。\n\n请点击右上角「...」→ 设置 → 订阅消息 → 重新允许「顾客下单提醒」，再回来点铃铛。',
+            showCancel: false
+          })
+          return
+        }
+        // 已勾选"总是保持以上选择"并允许：长期有效，无需再授权
+        if (itemStatus === 'accept') {
+          wx.setStorageSync('notifyEnabled', true)
+          this.setData({ notifyEnabled: true })
+          wx.showToast({ title: '通知已长期开启', icon: 'success' })
+          return
+        }
+        // 其他情况（未勾选保持/订阅次数已用完）：弹出授权框
+        this.doRequestSubscribe()
+      },
+      fail: () => {
+        this.doRequestSubscribe()
+      }
+    })
+  },
+
+  doRequestSubscribe: function () {
     wx.requestSubscribeMessage({
       tmplIds: [TEMPLATE_ID],
       success: (res) => {
